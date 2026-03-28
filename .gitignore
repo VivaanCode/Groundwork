@@ -2,3 +2,4 @@ backend/.env
 backend/.env.*
 backend/node_modules/
 backend/credentials.json
+backend/db.json
