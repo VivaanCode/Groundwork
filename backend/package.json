@@ -1,0 +1,16 @@
+{
+  "name": "groundwork-backend",
+  "version": "1.0.0",
+  "description": "LMS integration backend",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "dotenv": "^17.3.1",
+    "express": "^4.21.2",
+    "express-session": "^1.18.1",
+    "googleapis": "^144.0.0",
+    "groq-sdk": "^1.1.2"
+  }
+}
