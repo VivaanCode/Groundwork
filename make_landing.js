@@ -1,4 +1,6 @@
-<!DOCTYPE html>
+const fs = require('fs');
+
+const html = \<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -78,8 +80,8 @@
         <span class="font-medium text-sm tracking-tight">ClassLoop</span>
       </div>
       <div class="hidden md:flex items-center gap-6 text-[13px] font-medium text-zinc-500">
-        <a href="#teacher-view" onclick="document.querySelector('[data-target=teacher-view]').click(); return false;" class="hover:text-zinc-950 transition-colors">Teacher Tools</a>
-        <a href="#student-view" onclick="document.querySelector('[data-target=student-view]').click(); return false;" class="hover:text-zinc-950 transition-colors">Student Experience</a>
+        <a href="#teacher-view" onclick="document.querySelector('[data-target=teacher-view]').click()" class="hover:text-zinc-950 transition-colors">Teacher Tools</a>
+        <a href="#student-view" onclick="document.querySelector('[data-target=student-view]').click()" class="hover:text-zinc-950 transition-colors">Student Experience</a>
       </div>
       <div class="flex gap-2">
         <a href="/student/login" class="bg-zinc-100 text-zinc-900 border border-zinc-200 px-3.5 py-1.5 rounded-md text-[13px] font-medium hover:bg-zinc-200 transition-all">
@@ -161,7 +163,7 @@
                     <div class="flex items-start justify-between mb-6">
                       <div>
                         <div class="text-sm font-semibold text-zinc-900">Generate Slides Instantly</div>
-                        <p class="text-[13px] text-zinc-500 mt-1">Provide a topic &amp; first slide and let AI do the heavy lifting.</p>
+                        <p class="text-[13px] text-zinc-500 mt-1">Provide a topic/first slide and let AI do the heavy lifting.</p>
                       </div>
                       <div class="px-2 py-1 bg-purple-50 text-purple-700 text-[10px] font-bold rounded border border-purple-100 flex items-center gap-1"><i data-lucide="sparkles" class="w-3 h-3"></i> AI Powered</div>
                     </div>
@@ -231,14 +233,14 @@
               </nav>
             </div>
             
-            <div class="bg-white rounded-xl border border-zinc-100 shadow-[0_2px_10px_rgb(0,0,0,0.02)] p-4 mb-6">
+            <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4 mb-6">
               <div class="flex items-center gap-2 mb-3">
                 <div class="bg-blue-50 p-1.5 rounded-md border border-blue-100"><i data-lucide="check-circle" class="w-4 h-4 text-blue-800"></i></div>
-                <h4 class="font-semibold text-zinc-900 text-sm">Progress</h4>
+                <h4 class="font-semibold text-gray-900 text-sm">Progress</h4>
               </div>
-              <div class="bg-zinc-50 rounded-lg p-3 border border-zinc-100 mb-2">
-                <span class="text-xs font-bold text-zinc-900 block mb-1">Industrial Revolution</span>
-                <p class="text-[10px] text-zinc-500 mb-2 font-light">3 out of 5 slides completed.</p>
+              <div class="bg-gray-50 rounded-lg p-3 border border-gray-100 mb-2">
+                <span class="text-xs font-bold text-gray-900 block mb-1">Industrial Revolution</span>
+                <p class="text-[10px] text-gray-500 mb-2 font-light">3 out of 5 slides completed.</p>
                 <div class="w-full bg-zinc-200 h-1.5 rounded-full overflow-hidden">
                    <div class="bg-blue-500 h-full w-3/5"></div>
                 </div>
@@ -284,7 +286,7 @@
                       <span class="bg-blue-50 text-blue-700 px-2 py-1 text-[10px] font-bold rounded">Pending</span>
                    </div>
                    <p class="text-sm text-zinc-600 mb-4">Teacher assigned link mapped directly to a trusted site.</p>
-                     <a href="/student/dashboard" class="bg-zinc-100 text-zinc-900 border border-zinc-200 text-xs font-semibold px-4 py-2 rounded-md hover:bg-zinc-200 inline-block">Open Resource</a>
+                   <a href="/student/dashboard" class="bg-zinc-100 text-zinc-900 border border-zinc-200 text-xs font-semibold px-4 py-2 rounded-md hover:bg-zinc-200 inline-block">Open Resource</a>
                 </div>
              </div>
           </div>
@@ -434,4 +436,7 @@
     });
   </script>
 </body>
-</html>
+</html>\;
+
+fs.writeFileSync('frontend/landing.html', html, 'utf8');
+console.log('Updated landing HTML');

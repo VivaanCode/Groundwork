@@ -24,18 +24,22 @@ app.use(
 // --- Persistent DB ---
 const dbPath = path.join(__dirname, 'db.json');
 const db = {
-    users: {}, // googleId -> { id, role, name, email, picture, classCode }
+    users: {}, // googleId -> { id, role, name, email, picture, classCode, schoolId }     
     teachersByCode: {}, // code -> googleId
     lessons: {},
     assignments: {},
     studentProgress: {},
-    messages: []
+    messages: [],
+    schools: {}, // schoolId -> { id, name, code, teacherIds }
+    schoolsByCode: {} // code -> schoolId
 };
 
 if (fs.existsSync(dbPath)) {
     try {
         const loadedDb = JSON.parse(fs.readFileSync(dbPath, 'utf8'));
         Object.assign(db, loadedDb);
+        if (!db.schools) db.schools = {};
+        if (!db.schoolsByCode) db.schoolsByCode = {};
     } catch (e) {
         console.error('Failed to load db.json', e);
     }
@@ -823,9 +827,19 @@ app.get("/student/login", (req, res) => {
 app.get("/teacher/login", (req, res) => {
     const url = createOAuthClient(req).generateAuthUrl({
         access_type: "offline",
+        scope: ["openid", "email", "profile"],
+        state: "teacher"
+    });
+    res.redirect(url);
+});
+
+app.get("/teacher/auth/gmail", (req, res) => {
+    if (!req.session.userId) return res.redirect("/");
+    const url = createOAuthClient(req).generateAuthUrl({
+        access_type: "offline",
         scope: ["https://www.googleapis.com/auth/gmail.readonly", "https://www.googleapis.com/auth/gmail.send", "openid", "email", "profile"],
         prompt: "consent",
-        state: "teacher"
+        state: "teacher_gmail"
     });
     res.redirect(url);
 });
@@ -842,47 +856,71 @@ app.get("/auth/google/callback", async (req, res) => {
         const profile = userInfo.data;
         const userId = profile.id;
 
+        let roleFromState = state;
+        if (state === 'teacher_gmail') roleFromState = 'teacher';
+
         let user = db.users[userId];
         if (!user) {
             user = {
                 id: userId,
-                role: state || 'student',
+                role: roleFromState || 'student',
                 name: profile.name,
                 email: profile.email,
                 picture: profile.picture,
-                classCode: state === 'teacher' ? generateCode() : null
+                classCode: roleFromState === 'teacher' ? generateCode() : null
             };
             db.users[userId] = user;
-            if (state === 'teacher') {
+            if (roleFromState === 'teacher') {
                 db.teachersByCode[user.classCode] = userId;
             }
         }
-        
-        // Ensure they have a persistent login token
+
         if (!user.loginToken) {
             user.loginToken = "tk_" + Math.random().toString(36).substring(2) + Math.random().toString(36).substring(2);
         }
-        
-        req.session.tokens = tokens;
+
         req.session.userId = userId;
 
-        if (user.role === 'teacher') res.redirect("/teacher/dashboard?token=" + user.loginToken);
-        else res.redirect("/student/dashboard?token=" + user.loginToken);
+        if (user.role === 'teacher') {
+            if (state === 'teacher_gmail') {
+                if (tokens.refresh_token) {
+                    user.gmailRefreshToken = tokens.refresh_token; 
+                    fs.writeFileSync(path.join(__dirname, 'db.json'), JSON.stringify(db, null, 2));
+                }
+                req.session.tokens = tokens;
+                return res.redirect("/teacher/dashboard?token=" + user.loginToken);
+            } else {
+                if (user.gmailRefreshToken) {
+                    req.session.tokens = { refresh_token: user.gmailRefreshToken };
+                    return res.redirect("/teacher/dashboard?token=" + user.loginToken);
+                } else {
+                    return res.redirect("/teacher/auth/gmail");
+                }
+            }
+        } else {
+            req.session.tokens = tokens;
+            return res.redirect("/student/dashboard?token=" + user.loginToken);
+        }
     } catch (e) { res.status(500).send("Auth failed: " + e.message); }
 });
 
 app.get("/api/auth/restore", (req, res) => {
     const token = req.query.token;
     if (!token) return res.redirect("/");
-    
-    // Find user by token
+
     const user = Object.values(db.users).find(u => u.loginToken === token);
     if (user) {
         req.session.userId = user.id;
-        if (user.role === 'teacher') return res.redirect("/teacher/dashboard");
+        if (user.role === 'teacher') {
+            if (user.gmailRefreshToken) {
+                req.session.tokens = { refresh_token: user.gmailRefreshToken };
+                return res.redirect("/teacher/dashboard");
+            }
+            return res.redirect("/teacher/login");
+        }
         return res.redirect("/student/dashboard");
     }
-    
+
     res.redirect("/?cleartoken=1");
 });
 
@@ -933,36 +971,68 @@ app.get("/student/dashboard", (req, res) => {
                                 const lesson = db.lessons[assignment.lessonId];
                                 if (!lesson) return false;
                                 const progress = Object.values(db.studentProgress || {}).find(p => p.studentId === user.id && p.assignmentId === assignment.id);
-                                const progressPercent = progress && lesson.slides && lesson.slides.length ? Math.round((progress.progress / lesson.slides.length) * 100) : 0;
+                                let progressPercent = progress && lesson.slides && lesson.slides.length ? Math.round((progress.progress / lesson.slides.length) * 100) : 0;
+                                if (lesson.type === 'guide') { progressPercent = progress && progress.completed ? 100 : 0; }
                                 return progressPercent < 100;
                             });
 
-                            return currentAssignments.length > 0 ? currentAssignments.map(assignment => {
+                            const renderAssignment = (assignment, isCompleted) => {
                                 const lesson = db.lessons[assignment.lessonId];
                                 const progress = Object.values(db.studentProgress || {}).find(p => p.studentId === user.id && p.assignmentId === assignment.id);
-                                const progressPercent = progress && lesson.slides && lesson.slides.length ? Math.round((progress.progress / lesson.slides.length) * 100) : 0;
+                                let progressPercent = progress && lesson.slides && lesson.slides.length ? Math.round((progress.progress / lesson.slides.length) * 100) : 0;
+                                if (lesson.type === 'guide') { progressPercent = progress && progress.completed ? 100 : 0; }
+                                
+                                let icon = '<i data-lucide="book-open" class="w-4 h-4"></i>';
+                                let iconBg = 'bg-orange-100 text-orange-600';
+                                let label = '';
+                                let actionHref = `/student/lesson/${assignment.id}`;
+                                let actionText = isCompleted ? 'Review' : (progressPercent === 0 ? 'Start' : 'Resume');
+                                let actionTarget = '';
+
+                                if (lesson.type === 'guide') {
+                                    icon = '<i data-lucide="compass" class="w-4 h-4"></i>';
+                                    iconBg = 'bg-blue-100 text-blue-600';
+                                    label = '<span class="px-1.5 py-0.5 bg-blue-100 text-blue-700 text-[10px] uppercase font-bold rounded ml-2">Guide</span>';
+                                    actionHref = `/student/lesson/${assignment.id}`; // this will redirect
+                                    // Or can we do: actionHref = lesson.guideURL ? lesson.guideURL : actionHref;
+                                    if (lesson.guideURL) {
+                                        actionHref = lesson.guideURL;
+                                        actionTarget = '';
+                                    }
+                                    actionText = isCompleted ? 'Review Link' : 'Open Link';
+                                }
+                                
+                                if (isCompleted) {
+                                    icon = '<i data-lucide="check-circle" class="w-4 h-4"></i>';
+                                    iconBg = 'bg-green-100 text-green-600';
+                                }
+
                                 return `
-                                    <div class="flex items-center justify-between p-4 bg-zinc-50 border border-zinc-100 rounded-lg hover:border-zinc-300 transition-colors cursor-pointer group">
+                                    <div class="flex items-center justify-between p-4 bg-zinc-50 border border-zinc-100 rounded-lg hover:border-zinc-300 transition-colors cursor-pointer group ${isCompleted ? 'opacity-75' : ''}">
                                         <div class="flex items-center gap-3 flex-1">
-                                            <div class="p-2 bg-orange-100 text-accent rounded-md group-hover:scale-110 transition-transform">
-                                                <i data-lucide="book-open" class="w-4 h-4"></i>
+                                            <div class="p-2 ${iconBg} rounded-md group-hover:scale-110 transition-transform">
+                                                ${icon}
                                             </div>
                                             <div class="flex-1">
-                                                <div class="font-bold text-sm text-zinc-900">${lesson.title}</div>
+                                                <div class="font-bold text-sm text-zinc-900 flex items-center">${lesson.title}${label}</div>
                                                 <div class="text-[11px] font-medium text-zinc-500 mt-0.5">
-                                                    Due: ${assignment.dueDate ? new Date(assignment.dueDate).toLocaleDateString() : 'No Due Date'} &bull; Progress: ${progressPercent}%
+                                                    ${isCompleted ? 'Completed' : `Due: ${assignment.dueDate ? new Date(assignment.dueDate).toLocaleDateString() : 'No Due Date'} &bull; Progress: ${progressPercent}%`}
                                                 </div>
+                                                ${!isCompleted && lesson.type !== 'guide' ? `
                                                 <div class="w-32 h-1.5 bg-zinc-200 rounded-full mt-1.5 overflow-hidden">
                                                     <div class="h-full bg-accent transition-all" style="width: ${progressPercent}%"></div>
                                                 </div>
+                                                ` : ''}
                                             </div>
                                         </div>
-                                        <a href="/student/lesson/${assignment.id}" class="px-3 py-1.5 bg-white border border-zinc-200 text-xs font-semibold rounded shadow-sm hover:bg-zinc-100">
-                                            ${progressPercent === 0 ? 'Start' : 'Resume'}
+                                        <a href="${actionHref}" ${actionTarget} class="px-3 py-1.5 bg-white border border-zinc-200 text-xs font-semibold rounded shadow-sm hover:bg-zinc-100 ${isCompleted ? 'text-zinc-600' : ''}">
+                                            ${actionText}
                                         </a>
                                     </div>
                                 `;
-                            }).join("") : '<div class="text-center py-10 bg-zinc-50 border border-zinc-100 rounded-xl"><div class="text-5xl mb-4">🌴</div><h4 class="text-sm font-bold text-zinc-900 mb-1">Catching a break!</h4><p class="text-xs text-zinc-500">No active lessons assigned yet.</p></div>';
+                            };
+
+                            return currentAssignments.length > 0 ? currentAssignments.map(a => renderAssignment(a, false)).join("") : '<div class="text-center py-10 bg-zinc-50 border border-zinc-100 rounded-xl"><div class="text-5xl mb-4">🌴</div><h4 class="text-sm font-bold text-zinc-900 mb-1">Catching a break!</h4><p class="text-xs text-zinc-500">No active lessons assigned yet.</p></div>';
                         })()}
                     </div>
                 </div>
@@ -976,31 +1046,67 @@ app.get("/student/dashboard", (req, res) => {
                                 const lesson = db.lessons[assignment.lessonId];
                                 if (!lesson) return false;
                                 const progress = Object.values(db.studentProgress || {}).find(p => p.studentId === user.id && p.assignmentId === assignment.id);
-                                const progressPercent = progress && lesson.slides && lesson.slides.length ? Math.round((progress.progress / lesson.slides.length) * 100) : 0;
+                                let progressPercent = progress && lesson.slides && lesson.slides.length ? Math.round((progress.progress / lesson.slides.length) * 100) : 0;
+                                if (lesson.type === 'guide') { progressPercent = progress && progress.completed ? 100 : 0; }
                                 return progressPercent >= 100;
                             });
 
-                            return completedAssignments.length > 0 ? completedAssignments.map(assignment => {
+                            // Re-using the render function
+                            const renderAssignment = (assignment, isCompleted) => {
                                 const lesson = db.lessons[assignment.lessonId];
+                                const progress = Object.values(db.studentProgress || {}).find(p => p.studentId === user.id && p.assignmentId === assignment.id);
+                                let progressPercent = progress && lesson.slides && lesson.slides.length ? Math.round((progress.progress / lesson.slides.length) * 100) : 0;
+                                if (lesson.type === 'guide') { progressPercent = progress && progress.completed ? 100 : 0; }
+                                
+                                let icon = '<i data-lucide="book-open" class="w-4 h-4"></i>';
+                                let iconBg = 'bg-orange-100 text-orange-600';
+                                let label = '';
+                                let actionHref = `/student/lesson/${assignment.id}`;
+                                let actionText = isCompleted ? 'Review' : (progressPercent === 0 ? 'Start' : 'Resume');
+                                let actionTarget = '';
+
+                                if (lesson.type === 'guide') {
+                                    icon = '<i data-lucide="compass" class="w-4 h-4"></i>';
+                                    iconBg = 'bg-blue-100 text-blue-600';
+                                    label = '<span class="px-1.5 py-0.5 bg-blue-100 text-blue-700 text-[10px] uppercase font-bold rounded ml-2">Guide</span>';
+                                    if (lesson.guideURL) {
+                                        actionHref = lesson.guideURL;
+                                        actionTarget = '';
+                                    }
+                                    actionText = isCompleted ? 'Review Link' : 'Open Link';
+                                }
+                                
+                                if (isCompleted) {
+                                    icon = '<i data-lucide="check-circle" class="w-4 h-4"></i>';
+                                    iconBg = 'bg-green-100 text-green-600';
+                                }
+
                                 return `
-                                    <div class="flex items-center justify-between p-4 bg-zinc-50 border border-zinc-100 rounded-lg hover:border-zinc-300 transition-colors cursor-pointer group opacity-75">
+                                    <div class="flex items-center justify-between p-4 bg-zinc-50 border border-zinc-100 rounded-lg hover:border-zinc-300 transition-colors cursor-pointer group ${isCompleted ? 'opacity-75' : ''}">
                                         <div class="flex items-center gap-3 flex-1">
-                                            <div class="p-2 bg-green-100 text-green-600 rounded-md group-hover:scale-110 transition-transform">
-                                                <i data-lucide="check-circle" class="w-4 h-4"></i>
+                                            <div class="p-2 ${iconBg} rounded-md group-hover:scale-110 transition-transform">
+                                                ${icon}
                                             </div>
                                             <div class="flex-1">
-                                                <div class="font-bold text-sm text-zinc-900">${lesson.title}</div>
+                                                <div class="font-bold text-sm text-zinc-900 flex items-center">${lesson.title}${label}</div>
                                                 <div class="text-[11px] font-medium text-zinc-500 mt-0.5">
-                                                    Completed
+                                                    ${isCompleted ? 'Completed' : `Due: ${assignment.dueDate ? new Date(assignment.dueDate).toLocaleDateString() : 'No Due Date'} &bull; Progress: ${progressPercent}%`}
                                                 </div>
+                                                ${!isCompleted && lesson.type !== 'guide' ? `
+                                                <div class="w-32 h-1.5 bg-zinc-200 rounded-full mt-1.5 overflow-hidden">
+                                                    <div class="h-full bg-accent transition-all" style="width: ${progressPercent}%"></div>
+                                                </div>
+                                                ` : ''}
                                             </div>
                                         </div>
-                                        <a href="/student/lesson/${assignment.id}" class="px-3 py-1.5 bg-white border border-zinc-200 text-xs font-semibold rounded shadow-sm hover:bg-zinc-100 text-zinc-600">
-                                            Review
+                                        <a href="${actionHref}" ${actionTarget} class="px-3 py-1.5 bg-white border border-zinc-200 text-xs font-semibold rounded shadow-sm hover:bg-zinc-100 ${isCompleted ? 'text-zinc-600' : ''}">
+                                            ${actionText}
                                         </a>
                                     </div>
                                 `;
-                            }).join("") : '<div class="text-center py-6 text-zinc-500 text-sm">No completed lessons yet.</div>';
+                            };
+
+                            return completedAssignments.length > 0 ? completedAssignments.map(a => renderAssignment(a, true)).join("") : '<div class="text-center py-6 text-zinc-500 text-sm">No completed lessons yet.</div>';
                         })()}
                     </div>
                 </div>
@@ -1053,6 +1159,115 @@ app.get("/student/help", (req, res) => {
         </div>
     `;
     res.send(renderDashboard(content, user));
+});
+
+
+app.get("/teacher/school", (req, res) => {
+    if (!req.session.userId || !db.users[req.session.userId]) return res.redirect("/");
+    const teacher = db.users[req.session.userId];
+    if (teacher.role !== 'teacher') return res.redirect("/");
+
+    let content = '<div class="mb-6 flex items-center justify-between">' +
+        '<div class="flex items-center gap-3">' +
+            '<a href="/teacher/dashboard" class="p-2 bg-white app-border rounded-lg hover:bg-zinc-50 transition-colors">' +
+                '<i data-lucide="arrow-left" class="w-4 h-4 text-zinc-600"></i>' +
+            '</a>' +
+            '<h1 class="text-2xl font-bold text-zinc-900">School Network</h1>' +
+        '</div>' +
+        '<div class="text-sm text-zinc-500 font-medium">Coordinate effectively with your colleagues</div>' +
+    '</div>';
+
+    if (teacher.schoolId && db.schools[teacher.schoolId]) {
+        const school = db.schools[teacher.schoolId];
+        content += '<div class="max-w-2xl bg-white app-border rounded-xl p-8 shadow-sm mb-6">' +
+            '<h2 class="text-2xl font-bold mb-6 text-zinc-900">' + school.name + '</h2>' +
+            '<div class="p-6 bg-zinc-50 rounded-xl border border-zinc-200 mb-8 flex flex-col sm:flex-row items-center justify-between gap-4">' +
+                '<div>' +
+                    '<p class="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-2">Invite Code</p>' +
+                    '<div class="flex items-center gap-3">' +
+                        '<code class="px-4 py-2 bg-white border border-zinc-300 rounded-lg font-mono text-2xl font-bold text-zinc-800 tracking-wider shadow-sm">' + school.code + '</code>' +
+                    '</div>' +
+                '</div>' +
+                '<div class="text-xs text-zinc-500 max-w-xs text-center sm:text-left leading-relaxed bg-white/50 p-3 rounded-lg border border-zinc-100 italic">' +
+                    'Share this code with other teachers so they can join your network and sync their dashboard.' +
+                '</div>' +
+            '</div>' +
+            '<h3 class="font-bold text-sm mb-4 text-zinc-400 uppercase tracking-widest">Teachers in Network (' + school.teacherIds.length + ')</h3>' +
+            '<div class="space-y-3">' +
+                school.teacherIds.map(id => {
+                    const t = db.users[id];
+                    return '<div class="p-4 bg-white border border-zinc-100 shadow-sm rounded-xl flex items-center justify-between transition-all hover:border-zinc-300 group">' +
+                        '<div class="flex items-center gap-3">' +
+                            '<div class="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 font-bold flex items-center justify-center text-xs">' +
+                                (t && t.name ? t.name.charAt(0).toUpperCase() : '?') +
+                            '</div>' +
+                            '<span class="font-bold text-sm text-zinc-800">' + (t ? t.name : 'Unknown User') + '</span>' +
+                        '</div>' +
+                        (id === teacher.id ? '<span class="px-3 py-1 bg-zinc-900 text-white font-bold text-xs rounded-full shadow-sm">You</span>' : '') +
+                    '</div>';
+                }).join('') +
+            '</div>' +
+        '</div>';
+    } else {
+        content += '<div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl">' +
+            '<div class="bg-white app-border rounded-xl p-8 shadow-sm flex flex-col h-full">' +
+                '<div class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center mb-6 shadow-sm"><i data-lucide="building" class="w-6 h-6"></i></div>' +
+                '<h2 class="text-xl font-bold mb-3 text-zinc-900">Create a New School</h2>' +
+                '<p class="text-sm text-zinc-500 mb-8 leading-relaxed flex-grow">Start a new school network from scratch. You will get an invite code to share with your colleagues.</p>' +
+                '<form action="/teacher/school/create" method="POST" class="space-y-5">' +
+                    '<div>' +
+                        '<label class="block text-xs font-bold text-zinc-400 uppercase tracking-widest mb-2">School Name</label>' +
+                        '<input type="text" name="name" required placeholder="e.g. Washington High School" class="w-full p-4 border border-zinc-200 rounded-xl focus:ring-2 focus:ring-indigo-600 focus:outline-none transition-shadow shadow-sm font-medium">' +
+                    '</div>' +
+                    '<button type="submit" class="w-full p-4 bg-zinc-950 text-white rounded-xl font-bold hover:shadow-lg hover:bg-zinc-800 transition-all active:scale-[0.98]">Create School</button>' +
+                '</form>' +
+            '</div>' +
+            '<div class="bg-white app-border rounded-xl p-8 shadow-sm flex flex-col h-full">' +
+                '<div class="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center mb-6 shadow-sm"><i data-lucide="users" class="w-6 h-6"></i></div>' +
+                '<h2 class="text-xl font-bold mb-3 text-zinc-900">Join an Existing School</h2>' +
+                '<p class="text-sm text-zinc-500 mb-8 leading-relaxed flex-grow">Enter a 6-character invite code provided by a colleague to join their established network.</p>' +
+                '<form action="/teacher/school/join" method="POST" class="space-y-5">' +
+                    '<div>' +
+                        '<label class="block text-xs font-bold text-zinc-400 uppercase tracking-widest mb-2">Invite Code</label>' +
+                        '<input type="text" name="code" required placeholder="e.g. A1B2C3" class="w-full p-4 border border-zinc-200 rounded-xl font-mono uppercase tracking-widest focus:ring-2 focus:ring-emerald-600 focus:outline-none transition-shadow shadow-sm font-bold placeholder:font-sans placeholder:tracking-normal">' +
+                    '</div>' +
+                    '<button type="submit" class="w-full p-4 bg-emerald-600 text-white rounded-xl font-bold hover:shadow-lg hover:bg-emerald-700 transition-all active:scale-[0.98]">Join School</button>' +
+                '</form>' +
+            '</div>' +
+        '</div>';
+    }
+
+    res.send(renderDashboard(content, teacher));
+});
+
+app.post("/teacher/school/create", (req, res) => {
+    if (!req.session.userId || !db.users[req.session.userId]) return res.redirect("/");
+    const teacher = db.users[req.session.userId];
+    const { name } = req.body;
+    
+    const code = Math.random().toString(36).substring(2, 8).toUpperCase();
+    const schoolId = 'school_' + Date.now();
+    
+    db.schools[schoolId] = { id: schoolId, name, code, teacherIds: [teacher.id] };
+    db.schoolsByCode[code] = schoolId;
+    
+    teacher.schoolId = schoolId;
+    res.redirect("/teacher/school");
+});
+
+app.post("/teacher/school/join", (req, res) => {
+    if (!req.session.userId || !db.users[req.session.userId]) return res.redirect("/");
+    const teacher = db.users[req.session.userId];
+    const { code } = req.body;
+    const cleanCode = code ? code.trim().toUpperCase() : "";
+    
+    const schoolId = db.schoolsByCode[cleanCode];
+    if (schoolId && db.schools[schoolId]) {
+        const school = db.schools[schoolId];
+        if (!school.teacherIds.includes(teacher.id)) school.teacherIds.push(teacher.id);
+        teacher.schoolId = schoolId;
+    }
+    res.redirect("/teacher/school");
 });
 
 app.get("/teacher/dashboard", async (req, res) => {
@@ -1108,7 +1323,7 @@ app.get("/teacher/dashboard", async (req, res) => {
         <div class="grid grid-cols-12 gap-8">
             <div class="col-span-12 lg:col-span-8">
                 <h2 class="text-[13px] font-bold text-zinc-400 uppercase tracking-widest mb-4">Command Center</h2>
-                <div class="grid grid-cols-2 gap-4">
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
                     <a href="/teacher/roster" class="p-5 bg-white app-border rounded-xl flex flex-col items-start gap-3 hover:shadow-md transition-all group block" style="text-decoration:none; color:inherit;">
                         <div class="p-2 bg-orange-50 text-accent rounded-lg group-hover:scale-110 transition-transform"><i data-lucide="users" class="w-5 h-5"></i></div>
                         <div class="text-left font-bold text-sm">Class Roster</div>
@@ -1125,7 +1340,58 @@ app.get("/teacher/dashboard", async (req, res) => {
                             <div class="p-2 bg-blue-50 text-blue-600 rounded-lg group-hover:scale-110 transition-transform"><i data-lucide="sparkles" class="w-5 h-5"></i></div>
                             <div class="text-left font-bold text-sm">Create Lesson</div>
                         </a>
+                      <a href="/teacher/rubric/create" class="p-5 bg-white app-border rounded-xl flex flex-col items-start gap-3 hover:shadow-md transition-all group block" style="text-decoration:none; color:inherit;">
+                          <div class="p-2 bg-pink-50 text-pink-600 rounded-lg group-hover:scale-110 transition-transform"><i data-lucide="file-check-2" class="w-5 h-5"></i></div>
+                          <div class="text-left font-bold text-sm">Create Rubric</div>
+                      </a>
                 </div>
+                
+                ${user.schoolId && db.schools[user.schoolId] ? (function() {
+                    const school = db.schools[user.schoolId];
+                    const colleagues = school.teacherIds.filter(id => id !== user.id);
+                    const colleagueAssignments = Object.values(db.assignments || {}).filter(a => {
+                        const l = db.lessons[a.lessonId];
+                        return l && colleagues.includes(l.teacherId) && a.dueDate;
+                    }).sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
+                    
+                    let html = '<div class="mt-8"><div class="flex items-center justify-between mb-4">' +
+                        '<h2 class="text-[13px] font-bold text-zinc-400 uppercase tracking-widest">School Assignments (' + school.name + ')</h2>' +
+                        '<a href="/teacher/school" class="text-xs font-bold text-indigo-600 hover:text-indigo-700">Manage School &rarr;</a>' +
+                        '</div><div class="space-y-3">';
+                        
+                    if (colleagueAssignments.length === 0) {
+                        html += '<div class="p-6 bg-zinc-50 border border-zinc-100 rounded-xl text-center text-sm text-zinc-500">No upcoming assignments from colleagues.</div>';
+                    } else {
+                        html += colleagueAssignments.map(a => {
+                            const l = db.lessons[a.lessonId];
+                            const t = db.users[l.teacherId];
+                            const tName = t ? t.name : 'Unknown';
+                            const dateStr = new Date(a.dueDate).toLocaleDateString();
+                            
+                            let iconHtml = '<i data-lucide="calendar" class="w-4 h-4"></i>';
+                            let iconBg = 'bg-zinc-100 text-zinc-600';
+                            let labelHtml = '';
+                            
+                            if (l.type === 'guide') {
+                                iconHtml = '<i data-lucide="compass" class="w-4 h-4"></i>';
+                                iconBg = 'bg-blue-50 text-blue-600';
+                                labelHtml = '<span class="px-1.5 py-0.5 bg-blue-100 text-blue-700 text-[10px] uppercase font-bold rounded ml-2">Guide</span>';
+                            }
+
+                            return '<div class="p-4 bg-white app-border rounded-xl flex justify-between items-center shadow-sm">' +
+                                '<div class="flex items-center gap-3">' +
+                                '<div class="p-2 ' + iconBg + ' rounded-lg">' + iconHtml + '</div>' +
+                                '<div><div class="font-bold text-sm text-zinc-900 flex items-center">' + l.title + labelHtml + '</div>' +
+                                '<div class="text-xs text-zinc-500 mt-0.5">Teacher: ' + tName + '</div></div></div>' +
+                                '<div class="text-xs font-bold px-2 py-1 bg-red-50 text-red-600 rounded">Due: ' + dateStr + '</div></div>';
+                        }).join("");
+                    }
+                    html += '</div></div>';
+                    return html;
+                })() : '<div class="mt-8 p-6 bg-indigo-50 border border-indigo-100 rounded-xl flex items-center justify-between shadow-sm">' +
+                    '<div><h3 class="font-bold text-indigo-950 text-sm mb-1">Join a School Network</h3>' +
+                    '<p class="text-xs text-indigo-800">Collaborate with other teachers and sync assignment schedules.</p></div>' +
+                    '<a href="/teacher/school" class="px-4 py-2 bg-indigo-600 text-white text-xs font-bold rounded-lg shadow hover:bg-indigo-700 transition-colors" style="text-decoration: none;">Get Started</a></div>'}
             </div>
 
             <div class="col-span-12 lg:col-span-4 flex flex-col gap-8">
@@ -1573,6 +1839,144 @@ app.post("/api/ai/email", express.json(), async (req, res) => {
 });
 
 
+// --- AI Rubric Routes ---
+app.get("/teacher/rubric/create", (req, res) => {
+    if (!req.session.userId || !db.users[req.session.userId]) return res.redirect("/");
+    const teacher = db.users[req.session.userId];
+    if (teacher.role !== 'teacher') return res.redirect("/");
+
+    let content = `
+    <div class="mb-6 flex items-center gap-3">
+        <a href="/teacher/dashboard" class="p-2 bg-white app-border rounded-lg hover:bg-zinc-50">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i>
+        </a>
+        <h1 class="text-2xl font-bold text-zinc-900">Create Rubric</h1>
+    </div>
+
+    <div class="max-w-3xl mx-auto bg-white app-border rounded-xl p-8 shadow-sm">
+        <form id="rubricForm" class="space-y-6" onsubmit="generateRubric(event)">
+            <div>
+                <label class="block text-sm font-bold text-zinc-900 mb-2">Assignment Name *</label>
+                <input type="text" id="assignmentName" required class="w-full p-3 border border-zinc-200 rounded-lg focus:ring-2 focus:ring-zinc-950 focus:outline-none" placeholder="e.g. History Essay">
+            </div>
+            <div>
+                <label class="block text-sm font-bold text-zinc-900 mb-2">Assignment Description *</label>
+                <textarea id="assignmentDesc" required class="w-full p-3 border border-zinc-200 rounded-lg h-32 resize-none focus:ring-2 focus:ring-zinc-950 focus:outline-none" placeholder="Explain what the assignment is..."></textarea>
+            </div>
+            <div>
+                <label class="block text-sm font-bold text-zinc-900 mb-2">What are you looking for? (Optional)</label>
+                <textarea id="assignmentCriteria" class="w-full p-3 border border-zinc-200 rounded-lg h-24 resize-none focus:ring-2 focus:ring-zinc-950 focus:outline-none" placeholder="e.g. 5 paragraphs, strong thesis, proper MLA formatting..."></textarea>
+            </div>
+            
+            <button type="submit" id="submitBtn" class="w-full p-4 bg-zinc-950 text-white rounded-xl font-bold hover:shadow-lg hover:bg-zinc-800 transition-all flex items-center justify-center gap-2">
+                <i data-lucide="sparkles" class="w-5 h-5"></i> Generate Rubric
+            </button>
+        </form>
+
+        <div id="loadingState" class="hidden text-center py-12">
+            <i data-lucide="loader-2" class="w-8 h-8 text-zinc-400 animate-spin mx-auto mb-4"></i>
+            <p class="text-zinc-600 font-medium">AI is crafting your rubric...</p>
+        </div>
+
+        <div id="rubricOutput" class="hidden mt-8 pt-8 border-t border-zinc-100">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-lg font-bold text-zinc-900">Generated Rubric</h2>
+                <button type="button" onclick="copyRubric()" class="px-4 py-2 bg-zinc-100 text-zinc-700 rounded-lg font-medium hover:bg-zinc-200 transition-colors flex items-center gap-2 text-xs shadow-sm">
+                    <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copy Board
+                </button>
+            </div>
+            <div id="rubricContent" class="prose prose-sm max-w-none prose-table:border-collapse prose-th:bg-zinc-100 prose-td:border prose-td:border-zinc-200 prose-th:border prose-th:border-zinc-200 prose-th:p-3 prose-td:p-3 prose-table:w-full prose-table:text-sm"></div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script>
+        async function generateRubric(e) {
+            e.preventDefault();
+            const btn = document.getElementById('submitBtn');
+            const loading = document.getElementById('loadingState');
+            const output = document.getElementById('rubricOutput');
+            const content = document.getElementById('rubricContent');
+
+            btn.disabled = true;
+            btn.classList.add('opacity-50');
+            loading.classList.remove('hidden');
+            output.classList.add('hidden');
+
+            try {
+                const res = await fetch('/api/ai/rubric', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: document.getElementById('assignmentName').value,
+                        desc: document.getElementById('assignmentDesc').value,
+                        criteria: document.getElementById('assignmentCriteria').value
+                    })
+                });
+
+                const data = await res.json();
+                
+                if (data.error) throw new Error(data.error);
+                
+                content.innerHTML = marked.parse(data.rubric);
+                lucide.createIcons();
+                output.classList.remove('hidden');
+            } catch (err) {
+                alert('Error: ' + err.message);
+            } finally {
+                btn.disabled = false;
+                btn.classList.remove('opacity-50');
+                loading.classList.remove('hidden');
+            }
+        }
+        
+        function copyRubric() {
+             const text = document.getElementById('rubricContent').innerText;
+             navigator.clipboard.writeText(text);
+             const btn = event.currentTarget;
+             const originalHtml = btn.innerHTML;
+             btn.innerHTML = '<i data-lucide="check" class="w-3.5 h-3.5 text-green-600"></i> Copied!';
+             lucide.createIcons();
+             setTimeout(() => { btn.innerHTML = originalHtml; lucide.createIcons(); }, 2000);
+        }
+    </script>
+    `;
+    
+    res.send(renderDashboard(content, teacher));
+});
+
+app.post("/api/ai/rubric", express.json(), async (req, res) => {
+    try {
+        const { name, desc, criteria } = req.body;
+        
+        const prompt = `You are an expert teacher creating a grading rubric.
+Assignment Name: ${name}
+Assignment Description: ${desc}
+${criteria ? 'Specific Requirements / What the teacher is looking for: ' + criteria : ''}
+
+Please generate a professional, highly-organized grading rubric in a Markdown table format. 
+Columns should represent skill levels (e.g., Excellent, Proficient, Needs Improvement, Incomplete).
+Rows should represent different grading criteria (e.g., Content, Grammar, Formatting) based on the description provided.
+
+ONLY return the markdown table and absolutely NO other conversational text.`;
+
+        const completion = await groq.chat.completions.create({
+            messages: [{ role: "user", content: prompt }],
+            model: "llama-3.3-70b-versatile",
+        }).catch(async () => {
+             return await groq.chat.completions.create({
+                 messages: [{ role: "user", content: prompt }],
+                 model: "mixtral-8x7b-32768",
+             });
+        });
+
+        res.json({ rubric: completion.choices[0].message.content });
+    } catch (e) {
+        console.error("Groq Rubric Error:", e);
+        res.status(500).json({ error: e.message });
+    }
+});
+
 // --- Lessons and Progress Routes ---
 app.get("/teacher/lessons/manage", (req, res) => {
     if (!req.session.userId || !db.users[req.session.userId]) return res.redirect("/");
@@ -1595,19 +1999,30 @@ app.get("/teacher/lessons/manage", (req, res) => {
         </div>
         
         <div class="space-y-4 max-w-4xl">
-            ${allAssignments.length > 0 ? allAssignments.map(assignment => {
+            ${allAssignments.length > 0 ? allAssignments.map(assignment => {    
                 const lesson = db.lessons[assignment.lessonId];
                 if (!lesson) return '';
+                
+                let icon = '<i data-lucide="book-open" class="w-6 h-6"></i>';
+                let iconBg = 'bg-indigo-50 text-indigo-600';
+                let label = '';
+                
+                if (lesson.type === 'guide') {
+                    icon = '<i data-lucide="compass" class="w-6 h-6"></i>';
+                    iconBg = 'bg-blue-50 text-blue-600';
+                    label = '<span class="px-1.5 py-0.5 bg-blue-100 text-blue-700 text-[10px] uppercase font-bold rounded ml-2">Guide</span>';
+                }
+
                 return `
                     <div class="p-5 bg-white app-border rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-4 hover:shadow-md transition-shadow">
                         <div class="flex items-center gap-4">
-                            <div class="p-3 bg-indigo-50 text-indigo-600 rounded-lg">
-                                <i data-lucide="book-open" class="w-6 h-6"></i>
+                            <div class="p-3 ${iconBg} rounded-lg">
+                                ${icon}
                             </div>
                             <div>
-                                <div class="font-bold text-zinc-900">${lesson.title}</div>
-                                <div class="text-xs text-zinc-500 mt-1">
-                                    Assigned: ${new Date(assignment.assignedAt || lesson.createdAt || Date.now()).toLocaleDateString()} &bull; Due: ${assignment.dueDate ? new Date(assignment.dueDate).toLocaleDateString() : 'No Due Date'}
+                                <div class="font-bold text-zinc-900 flex items-center">${lesson.title}${label}</div>
+                                <div class="text-xs text-zinc-500 mt-1">        
+                                    Assigned: ${new Date(assignment.assignedAt || lesson.createdAt || Date.now()).toLocaleDateString()} &bull; Due: ${assignment.dueDate ? new Date(assignment.dueDate).toLocaleDateString() : 'No Due Date'}   
                                 </div>
                             </div>
                         </div>
@@ -1720,14 +2135,36 @@ app.get("/teacher/lessons/create", (req, res) => {
         <div class="max-w-4xl">
             <form action="/api/lessons/create" method="POST" class="space-y-6">
                 <div class="bg-white app-border rounded-xl p-6 shadow-sm">
-                    <label class="block text-sm font-bold text-zinc-900 mb-2">Lesson Title *</label>
+                    <label class="block text-sm font-bold text-zinc-900 mb-2">Assignment Type *</label>
+                    <select id="assignmentTypeToggle" name="type" class="w-full p-3 border border-zinc-200 rounded-lg focus:ring-2 focus:ring-zinc-950 focus:outline-none" onchange="toggleAssignmentType()">
+                        <option value="lesson">Normal Lesson</option>
+                        <option value="guide">Guide</option>
+                    </select>
+                </div>
+
+                <div class="bg-white app-border rounded-xl p-6 shadow-sm">
+                    <label class="block text-sm font-bold text-zinc-900 mb-2">Title *</label>
                     <input type="text" name="title" required placeholder="e.g., The Industrial Revolution"
                            class="w-full p-3 border border-zinc-200 rounded-lg focus:ring-2 focus:ring-zinc-950 focus:outline-none">
                 </div>
 
-                <div class="bg-white app-border rounded-xl p-6 shadow-sm">
-                    <label class="block text-sm font-bold text-zinc-900 mb-2">Lesson Content (Markdown) *</label>
-                    <textarea name="content" required rows="10" placeholder="Write your lesson content here..."
+                <div id="guide-builder-section" class="hidden">
+                    <div class="bg-blue-50 border border-blue-200 rounded-xl p-6 shadow-sm mb-6 text-blue-900">
+                        <div class="font-bold flex items-center gap-2 mb-2"><i data-lucide="info" class="w-5 h-5"></i> Please install our extension!</div>
+                        <p class="text-sm">To create a guide, you need the ClassLoop extension. For your students to complete Guides, they need the ClassLoop extension.</p>
+                        <a href="https://github.com/VivaanCode/Groundwork" target="_blank" class="text-blue-700 underline font-medium mt-2 inline-block">https://github.com/VivaanCode/ClassLoop</a>
+                    </div>
+                    <div class="bg-white app-border rounded-xl p-6 shadow-sm">
+                        <label class="block text-sm font-bold text-zinc-900 mb-2">Guide URL *</label>
+                        <input type="url" id="guideUrlInput" name="guideURL" placeholder="https://example.com/guide..."
+                               class="w-full p-3 border border-zinc-200 rounded-lg focus:ring-2 focus:ring-zinc-950 focus:outline-none">
+                    </div>
+                </div>
+
+                <div id="lesson-builder-section" class="space-y-6">
+                    <div class="bg-white app-border rounded-xl p-6 shadow-sm">      
+                        <label class="block text-sm font-bold text-zinc-900 mb-2">Lesson Content (Markdown) *</label>
+                    <textarea id="lessonContentInput" name="content" required rows="10" placeholder="Write your lesson content here..."
                               class="w-full p-3 border border-zinc-200 rounded-lg focus:ring-2 focus:ring-zinc-950 focus:outline-none resize-none"></textarea>
                 </div>
 
@@ -1755,11 +2192,18 @@ app.get("/teacher/lessons/create", (req, res) => {
                     <button type="button" onclick="addSlide()" class="px-4 py-2 bg-zinc-100 text-zinc-700 rounded font-medium hover:bg-zinc-200">
                         + Add Slide
                     </button>
+                    </div>
                 </div>
 
-                <div class="grid grid-cols-2 gap-4">
-                    <input type="date" name="dueDate" class="p-3 border border-zinc-200 rounded-lg focus:ring-2 focus:ring-zinc-950 focus:outline-none">
-                    <div></div>
+                <div class="bg-white app-border rounded-xl p-6 shadow-sm mb-6">
+                    <label class="block text-sm font-bold text-zinc-900 mb-2">Due Date</label>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <input type="date" id="dueDateInput" name="dueDate" class="w-full p-3 border border-zinc-200 rounded-lg focus:ring-2 focus:ring-zinc-950 focus:outline-none">
+                        <div id="dateWarning" class="p-3 bg-amber-50 rounded-lg border border-amber-200 text-sm text-amber-800 hidden">
+                            <div class="font-bold flex items-center gap-2"><i data-lucide="alert-triangle" class="w-4 h-4"></i> Schedule Conflict Warning</div>
+                            <div id="dateWarningText" class="mt-1 text-xs"></div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="flex gap-3">
@@ -1774,6 +2218,108 @@ app.get("/teacher/lessons/create", (req, res) => {
         </div>
 
         <script>
+            function toggleAssignmentType() {
+                var type = document.getElementById('assignmentTypeToggle').value;
+                var guideSection = document.getElementById('guide-builder-section');
+                var lessonSection = document.getElementById('lesson-builder-section');
+                var lessonContentInput = document.getElementById('lessonContentInput');
+                var guideUrlInput = document.getElementById('guideUrlInput');
+                
+                if (type === 'guide') {
+                    guideSection.classList.remove('hidden');
+                    lessonSection.classList.add('hidden');
+                    if(lessonContentInput) lessonContentInput.required = false;
+                    if(guideUrlInput) guideUrlInput.required = true;
+                } else {
+                    guideSection.classList.add('hidden');
+                    lessonSection.classList.remove('hidden');
+                    if(lessonContentInput) lessonContentInput.required = true;
+                    if(guideUrlInput) guideUrlInput.required = false;
+                }
+            }
+
+            
+            async function generateAiSlides() {
+                const title = document.querySelector('input[name="title"]').value.trim();
+                const description = document.getElementById('lessonContentInput').value.trim();
+                const firstSlideInput = document.querySelector('input[name="slides[]"]');
+                const firstSlideContent = document.querySelector('textarea[name="slide-content[]"]');
+                const firstSlideQuestion = document.querySelector('input[name="questions[]"]');
+                
+                if (!title || !description || !firstSlideInput || !firstSlideInput.value.trim() || !firstSlideContent.value.trim()) {
+                    alert('Please fill out the lesson title, description, and the content of the first slide before generating more slides with AI.');
+                    return;
+                }
+                
+                const slideCountInput = document.getElementById('ai-slide-count');
+                const count = parseInt(slideCountInput.value) || 3;
+                
+                const btn = document.getElementById('btn-generate-slides');
+                const originalHtml = btn.innerHTML;
+                btn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Generating...';
+                btn.disabled = true;
+                
+                // Construct first slide payload
+                const parentSlide = firstSlideInput.closest('.slide-item');
+                const qOptions = parentSlide.querySelectorAll('input[name^="question-option-"]');
+                const qAnswer = parentSlide.querySelector('input[name="question-answer[]"]');
+                
+                const firstSlide = {
+                    title: firstSlideInput.value.trim(),
+                    content: firstSlideContent.value.trim(),
+                    question: firstSlideQuestion ? firstSlideQuestion.value.trim() : '',
+                    options: Array.from(qOptions).map(o => o.value.trim()),
+                    answer: qAnswer ? qAnswer.value.trim().toUpperCase() : ''
+                };
+
+                try {
+                    const response = await fetch('/api/ai/generate-slides', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ title, description, firstSlide, count })
+                    });
+                    
+                    if (!response.ok) throw new Error('API Error');
+                    
+                    const newSlides = await response.json();
+                    
+                    for (const slide of newSlides) {
+                        const nextCount = document.querySelectorAll('.slide-item').length + 1;
+                        let slideHtml = '<div class="slide-item p-4 bg-purple-50/50 border border-purple-200 rounded-lg mt-4 shadow-sm">';
+                        slideHtml += '<div class="flex items-center gap-2 mb-2"><i data-lucide="sparkles" class="w-4 h-4 text-purple-600"></i><span class="text-xs font-bold text-purple-600 uppercase tracking-wider">AI Generated Slide</span></div>';
+                        slideHtml += '<input type="text" name="slides[]" placeholder="Slide ' + nextCount + ' title" value="' + (slide.title || '').replace(/"/g, '&quot;') + '" class="w-full p-2 border border-zinc-200 rounded mb-2">';
+                        slideHtml += '<textarea name="slide-content[]" placeholder="Slide content..." rows="3" class="w-full p-2 border border-zinc-200 rounded resize-none">' + (slide.content || '') + '</textarea>';
+                        slideHtml += '<label class="block text-sm font-medium text-zinc-700 mt-4 mb-2">Checkpoint Question (Optional)</label>';
+                        slideHtml += '<input type="text" name="questions[]" placeholder="Ask a checkpoint question..." value="' + (slide.question || '').replace(/"/g, '&quot;') + '" class="w-full p-2 border border-zinc-200 rounded mb-2">';
+                        slideHtml += '<div class="flex gap-2 mb-2">';
+                        slideHtml += '<input type="text" name="question-option-1[]" placeholder="Option A" value="' + (slide.options && slide.options[0] ? slide.options[0] : '').replace(/"/g, '&quot;') + '" class="flex-1 p-2 border border-zinc-200 rounded text-sm">';
+                        slideHtml += '<input type="text" name="question-option-2[]" placeholder="Option B" value="' + (slide.options && slide.options[1] ? slide.options[1] : '').replace(/"/g, '&quot;') + '" class="flex-1 p-2 border border-zinc-200 rounded text-sm">';
+                        slideHtml += '</div><div class="flex gap-2 mb-2">';
+                        slideHtml += '<input type="text" name="question-option-3[]" placeholder="Option C" value="' + (slide.options && slide.options[2] ? slide.options[2] : '').replace(/"/g, '&quot;') + '" class="flex-1 p-2 border border-zinc-200 rounded text-sm">';
+                        slideHtml += '<input type="text" name="question-option-4[]" placeholder="Option D" value="' + (slide.options && slide.options[3] ? slide.options[3] : '').replace(/"/g, '&quot;') + '" class="flex-1 p-2 border border-zinc-200 rounded text-sm">';
+                        slideHtml += '</div><label class="block text-sm font-medium text-zinc-700 mb-2">Correct Answer (A, B, C, or D)</label>';
+                        slideHtml += '<input type="text" name="question-answer[]" placeholder="A, B, C, or D" value="' + (slide.answer || '') + '" class="w-full p-2 border border-zinc-200 rounded text-sm uppercase">';
+                        slideHtml += '</div>';
+                        document.getElementById('slides-container').insertAdjacentHTML('beforeend', slideHtml);
+                    }
+                    
+                    // Re-initialize lucide icons for new slides
+                    if (window.lucide) {
+                        lucide.createIcons();
+                    }
+                    
+                    // Scroll to bottom
+                    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+                    
+                } catch(err) {
+                    alert('Error generating slides: ' + err.message);
+                } finally {
+                    btn.innerHTML = originalHtml;
+                    btn.disabled = false;
+                    if (window.lucide) lucide.createIcons();
+                }
+            }
+            
             function addSlide() {
                 const count = document.querySelectorAll('.slide-item').length + 1;
                 const html = '<div class="slide-item p-4 bg-zinc-50 border border-zinc-200 rounded-lg mt-4"> <input type="text" name="slides[]" placeholder="Slide ' + count + ' title" class="w-full p-2 border border-zinc-200 rounded mb-2"> <textarea name="slide-content[]" placeholder="Slide content..." rows="3" class="w-full p-2 border border-zinc-200 rounded resize-none"></textarea> <label class="block text-sm font-medium text-zinc-700 mt-4 mb-2">Checkpoint Question (Optional)</label> <input type="text" name="questions[]" placeholder="Ask a checkpoint question..." class="w-full p-2 border border-zinc-200 rounded mb-2"> <div class="flex gap-2 mb-2"> <input type="text" name="question-option-1[]" placeholder="Option A" class="flex-1 p-2 border border-zinc-200 rounded text-sm"> <input type="text" name="question-option-2[]" placeholder="Option B" class="flex-1 p-2 border border-zinc-200 rounded text-sm"> </div> <div class="flex gap-2 mb-2"> <input type="text" name="question-option-3[]" placeholder="Option C" class="flex-1 p-2 border border-zinc-200 rounded text-sm"> <input type="text" name="question-option-4[]" placeholder="Option D" class="flex-1 p-2 border border-zinc-200 rounded text-sm"> </div> <label class="block text-sm font-medium text-zinc-700 mb-2">Correct Answer (A, B, C, or D)</label> <input type="text" name="question-answer[]" placeholder="A, B, C, or D" class="w-full p-2 border border-zinc-200 rounded text-sm uppercase"> </div>';
@@ -1898,6 +2444,77 @@ app.post("/teacher/regenerate-code", express.urlencoded({ extended: true }), (re
     res.redirect("/teacher/dashboard?msg=code_regenerated");
 });
 
+
+app.post("/api/ai/generate-slides", express.json(), async (req, res) => {
+    try {
+        const { title, description, firstSlide, count } = req.body;
+        
+        const prompt = `You are an engaging teaching assistant AI creating slides for a lesson.
+Lesson Title: ${title}
+Lesson Description: ${description}
+
+The teacher has already created the foundation (Slide 1):
+Title: ${firstSlide.title}
+Content: ${firstSlide.content}
+${firstSlide.question ? `Checkpoint Question: ${firstSlide.question}
+Options: A) ${firstSlide.options[0]}, B) ${firstSlide.options[1]}, C) ${firstSlide.options[2]}, D) ${firstSlide.options[3]}
+Correct Answer: ${firstSlide.answer}` : ''}
+
+CRITICAL REQUIREMENT: Complete the presentation by generating EXACTLY ${count} MORE sequential slides that logically follow Slide 1. DO NOT REWRITE OR INCLUDE SLIDE 1.
+Output MUST BE ONLY A RAW JSON ARRAY of objects, with NO markdown formatting (no \`\`\`json blocks), no code block ticks, and no conversational text whatsoever. JUST THE VALID JSON ARRAY.
+Each slide object in the array MUST match this EXACT schema:
+[
+  {
+      "title": "A short engaging slide title",
+      "content": "A paragraph explaining the topic clearly to students",
+      "question": "A multiple choice checkpoint question string (or empty string if none)",
+      "options": ["Option A text", "Option B text", "Option C text", "Option D text"],
+      "answer": "A" // Must be exactly A, B, C, or D if question exists (empty string if no question)
+  }
+]`;
+
+        const completion = await groq.chat.completions.create({
+            messages: [{ role: "user", content: prompt }],
+            model: "llama-3.3-70b-versatile",
+            temperature: 0.7
+        }).catch(async (e) => {
+             console.error('Groq versatile failed, falling back to mixtral:', e);
+             return await groq.chat.completions.create({
+                 messages: [{ role: "user", content: prompt }],
+                 model: "mixtral-8x7b-32768",
+                 temperature: 0.7
+             });
+        });
+
+        let responseText = completion.choices[0].message.content.trim();
+        // Defensive cleanup just in case LLM wraps in markdown code block
+        if (responseText.startsWith('```json')) {
+            responseText = responseText.substring(7);
+        }
+        if (responseText.startsWith('```')) {
+            responseText = responseText.substring(3);
+        }
+        if (responseText.endsWith('```')) {
+            responseText = responseText.substring(0, responseText.length - 3);
+        }
+        responseText = responseText.trim();
+        
+        try {
+            const parsedSlides = JSON.parse(responseText);
+            if (!Array.isArray(parsedSlides)) {
+                return res.status(500).json({ error: "AI didn't return an array" });
+            }
+            res.json(parsedSlides);
+        } catch(err) {
+            console.error('Failed to parse AI JSON:', err, responseText);
+            res.status(500).json({ error: "Failed to parse AI response." });
+        }
+    } catch(e) {
+        console.error('AI Slide Gen Error:', e);
+        res.status(500).json({ error: e.message });
+    }
+});
+
 app.post("/api/lessons/create", express.urlencoded({ extended: true }), (req, res) => {
     if (!req.session.userId || !db.users[req.session.userId]) return res.redirect("/");
     const teacher = db.users[req.session.userId];
@@ -1935,7 +2552,9 @@ app.post("/api/lessons/create", express.urlencoded({ extended: true }), (req, re
         classCode: teacher.classCode,
         slides,
         dueDate: req.body.dueDate || null,
-        createdAt: new Date()
+        createdAt: new Date(),
+        type: req.body.type || 'lesson',
+        guideURL: req.body.guideURL || null
     };
 
     const assignmentId = "assign_" + Math.random().toString(36).substring(2, 9);
@@ -1948,6 +2567,77 @@ app.post("/api/lessons/create", express.urlencoded({ extended: true }), (req, re
     };
 
     res.redirect("/teacher/dashboard?msg=lesson_created");
+});
+
+app.get("/student/study-groups/:assignmentId", (req, res) => {
+    if (!req.session.userId || !db.users[req.session.userId]) return res.redirect("/");
+    const student = db.users[req.session.userId];
+    if (student.role !== 'student') return res.redirect("/");
+
+    const assignmentId = req.params.assignmentId;
+    const assignment = db.assignments[assignmentId];
+    if (!assignment || assignment.classCode !== student.classCode) return res.status(403).send("Forbidden");
+    
+    const lesson = db.lessons[assignment.lessonId];
+    if (!lesson) return res.status(404).send("Lesson not found");
+    if (lesson.type === 'guide' && lesson.guideURL) {
+        return res.redirect(lesson.guideURL);
+    }
+
+    const peers = Object.values(db.studentProgress)
+        .filter(p => p.assignmentId === assignmentId && p.studentId !== student.id)
+        .map(p => ({
+            progress: p,
+            user: db.users[p.studentId]
+        }))
+        .filter(p => p.user && p.user.classCode === student.classCode);
+
+    let content = `
+        <div class="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <a href="/student/lesson/${assignmentId}" class="p-2 bg-white app-border rounded-lg hover:bg-zinc-50 transition-colors">
+                    <i data-lucide="arrow-left" class="w-4 h-4 text-zinc-600"></i>
+                </a>
+                <div>
+                    <h1 class="text-2xl font-bold text-zinc-900">Study Groups</h1>
+                    <div class="text-sm text-zinc-500 font-medium">${lesson.title}</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-white app-border rounded-xl p-8 shadow-sm max-w-3xl mx-auto mt-4">
+            <div class="text-center mb-8">
+                <div class="w-16 h-16 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i data-lucide="users" class="w-8 h-8"></i>
+                </div>
+                <h2 class="text-xl font-bold text-zinc-900">Find a Study Partner</h2>
+                <p class="text-zinc-500 text-sm mt-2 max-w-lg mx-auto">Connect with classmates who are also working on this lesson.</p>
+            </div>
+            
+            <div class="space-y-4">
+                ${peers.length > 0 ? peers.map(p => `
+                    <div class="flex items-center justify-between p-4 border border-zinc-100 rounded-xl hover:border-zinc-300 transition-all bg-white shadow-sm hover:shadow-md">
+                        <div class="flex items-center gap-4">
+                            <img src="${p.user.picture || 'https://via.placeholder.com/150'}" alt="${p.user.name}" class="w-10 h-10 rounded-full border border-zinc-200 object-cover">
+                            <div>
+                                <h3 class="font-bold text-zinc-900 text-sm">${p.user.name}</h3>
+                                <p class="text-xs text-zinc-500 mt-0.5">Progress: Slide ${(p.progress.progress || 0) + 1} of ${lesson.slides.length}</p>
+                            </div>
+                        </div>
+                        <span class="text-[10px] font-bold px-2 py-1 bg-emerald-100 text-emerald-700 rounded-lg flex items-center gap-1 uppercase tracking-widest">
+                            <i data-lucide="circle-dot" class="w-3 h-3"></i> Working
+                        </span>
+                    </div>
+                `).join('') : `
+                    <div class="text-center py-8 text-zinc-500 border border-dashed border-zinc-200 rounded-xl bg-zinc-50 text-sm">
+                        No other students have started this lesson yet. Be the first!
+                    </div>
+                `}
+            </div>
+        </div>
+    `;
+
+    res.send(renderDashboard(content, student));
 });
 
 app.get("/student/lesson/:assignmentId", (req, res) => {
@@ -2031,6 +2721,17 @@ app.get("/student/lesson/:assignmentId", (req, res) => {
                         Get AI Hint
                     </button>
                     <div id="ai-response" class="mt-3 text-xs text-indigo-900 hidden space-y-2 p-3 bg-white/50 rounded-lg"></div>
+                </div>
+
+                <div class="bg-emerald-50 border border-emerald-100 rounded-xl p-4 mt-6 shadow-sm sticky top-[220px]">
+                    <div class="flex items-center gap-2 mb-2">
+                        <i data-lucide="users" class="w-4 h-4 text-emerald-600"></i>
+                        <span class="font-bold text-emerald-900 text-sm">Study Groups</span>
+                    </div>
+                    <p class="text-xs text-emerald-800 mb-4">Find classmates working on this right now.</p>
+                    <a href="/student/study-groups/${req.params.assignmentId}" class="block w-full py-2 px-3 bg-emerald-600 text-white text-center text-xs font-bold rounded hover:bg-emerald-700 transition-colors" style="text-decoration:none;">
+                        Find a Group
+                    </a>
                 </div>
             </div>
         </div>
@@ -2398,5 +3099,48 @@ io.on('connection', (socket) => {
         }
     });
 });
+
+
+
+app.post('/api/markGuideCompleted', express.json(), (req, res) => {
+    const { guideURL } = req.body;
+    
+    if (!req.session.userId || !db.users[req.session.userId]) {
+        return res.status(401).json({ error: "Please log in first", redirect: "/student/login" });
+    }
+
+    const student = db.users[req.session.userId];
+
+    // Find the assignment that has this guide URL and is assigned to the student's class
+    const assignment = Object.values(db.assignments).find(a => {
+        if (a.classCode !== student.classCode) return false;
+        const lesson = db.lessons[a.lessonId];
+        return lesson && lesson.type === 'guide' && lesson.guideURL === guideURL;
+    });
+
+    if (!assignment) {
+        return res.status(403).json({ error: "This Account does not have this Guide assigned." });
+    }
+
+    const progressId = student.id + "_" + assignment.id;
+    if (!db.studentProgress[progressId]) {
+        db.studentProgress[progressId] = {
+            id: progressId,
+            studentId: student.id,
+            assignmentId: assignment.id,
+            progress: 100,
+            completed: true,
+            responses: {}
+        };
+    } else {
+        db.studentProgress[progressId].completed = true;
+        db.studentProgress[progressId].progress = 100;
+    }
+    
+    fs.writeFileSync(path.join(__dirname, 'db.json'), JSON.stringify(db, null, 2));
+    
+    return res.status(200).json({ success: true, redirect: "/student/dashboard" });
+});
+
 
 server.listen(port, () => console.log(`ClassLoop live at http://localhost:${port}`));

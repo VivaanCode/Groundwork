@@ -3,6 +3,10 @@ backend/.env.*
 backend/node_modules/
 backend/credentials.json
 backend/db.json
+<<<<<<< Updated upstream
 .env
 .env.*
 node_modules/
+=======
+backend/routes.txt
+>>>>>>> Stashed changes
