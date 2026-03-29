@@ -1781,72 +1781,9 @@ class CompiledGuidePlayer {
     }
     if (this.spotlightEl) this.spotlightEl.style.display = "none";
 
-    var self = this;
-    this.titleEl.textContent = "Guide complete!";
-    this.progressEl.textContent = "";
-    this.bodyEl.innerHTML = "";
-
-    var msg = document.createElement("p");
-    msg.textContent = "Nice work! Enter your ClassLoop email to mark this guide as done.";
-    msg.style.cssText = "margin:0 0 14px;font-size:14px;color:#52525b;line-height:1.5;";
-    this.bodyEl.appendChild(msg);
-
-    var emailInput = document.createElement("input");
-    emailInput.type = "email";
-    emailInput.placeholder = "you@school.edu";
-    emailInput.style.cssText = "width:100%;padding:10px 12px;border:1px solid #e4e4e7;border-radius:8px;font-size:13px;font-family:inherit;margin-bottom:10px;box-sizing:border-box;";
-    this.bodyEl.appendChild(emailInput);
-
-    var statusEl = document.createElement("p");
-    statusEl.style.cssText = "margin:0;font-size:12px;color:#71717a;min-height:18px;";
-    this.bodyEl.appendChild(statusEl);
-
-    chrome.storage.local.get("classloopStudentEmail", function (d) {
-      if (d && d.classloopStudentEmail) emailInput.value = d.classloopStudentEmail;
-    });
-
-    var submitBtn = document.createElement("button");
-    submitBtn.type = "button";
-    submitBtn.className = "primary";
-    submitBtn.textContent = "Submit";
-    submitBtn.style.cssText = "width:100%;margin-top:6px;";
-
-    var skipBtn = document.createElement("button");
-    skipBtn.type = "button";
-    skipBtn.textContent = "Skip";
-    skipBtn.style.cssText = "width:100%;margin-top:6px;";
-
-    this.bodyEl.appendChild(submitBtn);
-    this.bodyEl.appendChild(skipBtn);
-
-    submitBtn.addEventListener("click", function () {
-      var email = emailInput.value.trim();
-      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        statusEl.textContent = "Please enter a valid email.";
-        statusEl.style.color = "#dc2626";
-        return;
-      }
-      submitBtn.disabled = true;
-      submitBtn.textContent = "Submitting...";
-      statusEl.textContent = "";
-      chrome.storage.local.set({ classloopStudentEmail: email });
-      self.submitCompletion(email, statusEl, function () {
-        submitBtn.textContent = "Done!";
-        setTimeout(function () { self.stop(); }, 1200);
-      }, function (err) {
-        submitBtn.disabled = false;
-        submitBtn.textContent = "Retry";
-        statusEl.textContent = err || "Failed to submit. Try again.";
-        statusEl.style.color = "#dc2626";
-      });
-    });
-
-    skipBtn.addEventListener("click", function () {
-      self.stop();
-    });
-
-    this.btnPrev.disabled = true;
-    this.btnNext.style.display = "none";
+    // Redirect to GET without asking for email
+    var guideUrl = this.originalGuideUrl || "";
+    window.location.href = "https://classloop.xyz/api/markGuideCompleted?guideURL=" + encodeURIComponent(guideUrl);
   }
 
   submitCompletion(email, statusEl, onSuccess, onError) {
@@ -3175,3 +3112,56 @@ void (function maybeOpenSharedLessonOrGuideFromUrl() {
   compiledGuidePlayer.start(sharedGuide, guideOriginalUrl);
   clearClGuideHashParam();
 })();
+
+
+// --- TEST MODE CONTENT SCRIPT ---
+window.addEventListener("message", (event) => {
+    if (event.data && event.data.type === "CLASSLOOP_START_TEST") {
+        chrome.runtime.sendMessage({ type: "START_TEST_INIT" }, (response) => {
+            window.postMessage({ type: "CLASSLOOP_START_TEST_RESPONSE", response: response }, "*");
+        });
+    }
+    if (event.data && event.data.type === "CLASSLOOP_END_TEST") {
+        chrome.runtime.sendMessage({ type: "END_TEST" }, (response) => {
+            window.postMessage({ type: "CLASSLOOP_END_TEST_RESPONSE", response: response }, "*");
+        });
+    }
+});
+
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message.type === "WARN_FULLSCREEN_EXIT") {
+        showCheatingWarning("Warning: You exited fullscreen mode! This action has been logged.");
+        // Try forcing back
+        chrome.runtime.sendMessage({ type: "FORCE_FULLSCREEN" });
+    } else if (message.type === "WARN_TAB_SWITCH") {
+        showCheatingWarning("Warning: You switched tabs! Stay on the test tab.");
+    } else if (message.type === "WARN_WINDOW_SWITCH") {
+        showCheatingWarning("Warning: You switched windows! Keep focus on the test window.");
+    }
+});
+
+function showCheatingWarning(text) {
+    let warningEl = document.getElementById("classloop-cheating-warning");
+    if (!warningEl) {
+        warningEl = document.createElement("div");
+        warningEl.id = "classloop-cheating-warning";
+        warningEl.style.position = "fixed";
+        warningEl.style.top = "0";
+        warningEl.style.left = "0";
+        warningEl.style.width = "100%";
+        warningEl.style.background = "red";
+        warningEl.style.color = "white";
+        warningEl.style.padding = "15px";
+        warningEl.style.textAlign = "center";
+        warningEl.style.zIndex = "9999999";
+        warningEl.style.fontWeight = "bold";
+        warningEl.style.fontSize = "18px";
+        document.body.appendChild(warningEl);
+    }
+    warningEl.innerText = text;
+    setTimeout(() => {
+        if (warningEl && warningEl.parentNode) {
+            warningEl.parentNode.removeChild(warningEl);
+        }
+    }, 5000);
+}

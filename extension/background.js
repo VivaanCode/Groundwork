@@ -977,3 +977,71 @@ chrome.runtime.onInstalled.addListener((details) => {
     });
   }
 });
+
+
+// --- TEST MODE ---
+let testModeActive = false;
+let testTabId = null;
+let testWindowId = null;
+
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message.type === "START_TEST_INIT") {
+        chrome.windows.getAll({}, (windows) => {
+            if (windows.length > 1) {
+                sendResponse({ ok: false, error: "Please close all other windows before starting the test." });
+            } else {
+                const currentWindow = windows[0];
+                chrome.windows.update(currentWindow.id, { state: "fullscreen" }, () => {
+                    testModeActive = true;
+                    testWindowId = currentWindow.id;
+                    testTabId = sender.tab ? sender.tab.id : null;
+                    sendResponse({ ok: true });
+                });
+            }
+        });
+        return true;
+    }
+    
+    if (message.type === "END_TEST") {
+        testModeActive = false;
+        testTabId = null;
+        if (testWindowId) {
+            chrome.windows.update(testWindowId, { state: "maximized" }, () => {
+                testWindowId = null;
+                sendResponse({ ok: true });
+            });
+        } else {
+            sendResponse({ ok: true });
+        }
+        return true;
+    }
+});
+
+chrome.windows.onBoundsChanged.addListener((win) => {
+    if (testModeActive && win.id === testWindowId) {
+        if (win.state !== "fullscreen") {
+            // Warn the user by sending message to content script
+            if (testTabId) {
+                chrome.tabs.sendMessage(testTabId, { type: "WARN_FULLSCREEN_EXIT" });
+            }
+        }
+    }
+});
+
+chrome.tabs.onActivated.addListener((activeInfo) => {
+    if (testModeActive && activeInfo.windowId === testWindowId && activeInfo.tabId !== testTabId) {
+        if (testTabId) {
+            chrome.tabs.sendMessage(testTabId, { type: "WARN_TAB_SWITCH" });
+            // Force back to test tab
+            chrome.tabs.update(testTabId, { active: true });
+        }
+    }
+});
+
+chrome.windows.onFocusChanged.addListener((windowId) => {
+    if (testModeActive && windowId !== testWindowId && windowId !== chrome.windows.WINDOW_ID_NONE) {
+        if (testTabId) {
+             chrome.tabs.sendMessage(testTabId, { type: "WARN_WINDOW_SWITCH" });
+        }
+    }
+});

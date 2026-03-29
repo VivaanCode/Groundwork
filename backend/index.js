@@ -989,10 +989,16 @@ app.get("/student/dashboard", (req, res) => {
                                 let actionText = isCompleted ? 'Review' : (progressPercent === 0 ? 'Start' : 'Resume');
                                 let actionTarget = '';
 
-                                if (lesson.type === 'guide') {
-                                    icon = '<i data-lucide="compass" class="w-4 h-4"></i>';
-                                    iconBg = 'bg-blue-100 text-blue-600';
-                                    label = '<span class="px-1.5 py-0.5 bg-blue-100 text-blue-700 text-[10px] uppercase font-bold rounded ml-2">Guide</span>';
+                                if (lesson.type === 'test') {
+                                        icon = '<i data-lucide="file-warning" class="w-4 h-4"></i>';
+                                        iconBg = 'bg-red-100 text-red-600';
+                                        label = '<span class="px-1.5 py-0.5 bg-red-100 text-red-700 text-[10px] uppercase font-bold rounded ml-2">Test</span>';
+                                        actionHref = '/student/test/' + assignment.id;
+                                        actionText = isCompleted ? 'Review Test' : 'Start Test';
+                                    } else if (lesson.type === 'guide') {
+                                        icon = '<i data-lucide="compass" class="w-4 h-4"></i>';
+                                        iconBg = 'bg-blue-100 text-blue-600';
+                                        label = '<span class="px-1.5 py-0.5 bg-blue-100 text-blue-700 text-[10px] uppercase font-bold rounded ml-2">Guide</span>';
                                     actionHref = `/student/lesson/${assignment.id}`; // this will redirect
                                     // Or can we do: actionHref = lesson.guideURL ? lesson.guideURL : actionHref;
                                     if (lesson.guideURL) {
@@ -1065,10 +1071,16 @@ app.get("/student/dashboard", (req, res) => {
                                 let actionText = isCompleted ? 'Review' : (progressPercent === 0 ? 'Start' : 'Resume');
                                 let actionTarget = '';
 
-                                if (lesson.type === 'guide') {
-                                    icon = '<i data-lucide="compass" class="w-4 h-4"></i>';
-                                    iconBg = 'bg-blue-100 text-blue-600';
-                                    label = '<span class="px-1.5 py-0.5 bg-blue-100 text-blue-700 text-[10px] uppercase font-bold rounded ml-2">Guide</span>';
+                                if (lesson.type === 'test') {
+                                        icon = '<i data-lucide="file-warning" class="w-4 h-4"></i>';
+                                        iconBg = 'bg-red-100 text-red-600';
+                                        label = '<span class="px-1.5 py-0.5 bg-red-100 text-red-700 text-[10px] uppercase font-bold rounded ml-2">Test</span>';
+                                        actionHref = '/student/test/' + assignment.id;
+                                        actionText = isCompleted ? 'Review Test' : 'Start Test';
+                                    } else if (lesson.type === 'guide') {
+                                        icon = '<i data-lucide="compass" class="w-4 h-4"></i>';
+                                        iconBg = 'bg-blue-100 text-blue-600';
+                                        label = '<span class="px-1.5 py-0.5 bg-blue-100 text-blue-700 text-[10px] uppercase font-bold rounded ml-2">Guide</span>';
                                     if (lesson.guideURL) {
                                         actionHref = lesson.guideURL;
                                         actionTarget = '';
@@ -1112,7 +1124,17 @@ app.get("/student/dashboard", (req, res) => {
                 </div>
             </div>
 
-            <div class="col-span-12 lg:col-span-4 space-y-6 mt-8 lg:mt-0">
+                        <div class="col-span-12 lg:col-span-4 space-y-6 mt-8 lg:mt-0">      
+                <div class="bg-emerald-50 border border-emerald-100 rounded-xl p-8 text-center relative overflow-hidden">
+                    <div class="absolute -right-4 -top-4 w-24 h-24 bg-emerald-200/50 rounded-full blur-2xl"></div>
+                    <i data-lucide="search" class="w-10 h-10 text-emerald-500 mx-auto mb-4 relative z-10"></i>
+                    <h3 class="text-lg font-bold text-emerald-950 mb-2 relative z-10">Research Center</h3>
+                    <p class="text-[13px] text-emerald-800 mb-6 relative z-10 leading-relaxed">Search academic sources, summarize findings, and chat with AI about your research.</p>
+                    <a href="/student/research" class="block w-full py-3 bg-emerald-600 text-white text-sm font-semibold rounded-lg hover:bg-emerald-700 transition-colors shadow-md hover:shadow-lg relative z-10 text-center" style="text-decoration: none;">
+                        Start Research
+                    </a>
+                </div>
+
                 <div class="bg-indigo-50 border border-indigo-100 rounded-xl p-8 text-center relative overflow-hidden">
                     <div class="absolute -right-4 -top-4 w-24 h-24 bg-indigo-200/50 rounded-full blur-2xl"></div>
                     <i data-lucide="life-buoy" class="w-10 h-10 text-indigo-500 mx-auto mb-4 relative z-10"></i>
@@ -2011,6 +2033,10 @@ app.get("/teacher/lessons/manage", (req, res) => {
                     icon = '<i data-lucide="compass" class="w-6 h-6"></i>';
                     iconBg = 'bg-blue-50 text-blue-600';
                     label = '<span class="px-1.5 py-0.5 bg-blue-100 text-blue-700 text-[10px] uppercase font-bold rounded ml-2">Guide</span>';
+                } else if (lesson.type === 'test') {
+                    icon = '<i data-lucide="file-warning" class="w-6 h-6"></i>';
+                    iconBg = 'bg-red-50 text-red-600';
+                    label = '<span class="px-1.5 py-0.5 bg-red-100 text-red-700 text-[10px] uppercase font-bold rounded ml-2">Test</span>';
                 }
 
                 return `
@@ -2139,6 +2165,7 @@ app.get("/teacher/lessons/create", (req, res) => {
                     <select id="assignmentTypeToggle" name="type" class="w-full p-3 border border-zinc-200 rounded-lg focus:ring-2 focus:ring-zinc-950 focus:outline-none" onchange="toggleAssignmentType()">
                         <option value="lesson">Normal Lesson</option>
                         <option value="guide">Guide</option>
+                                        <option value="test">Test</option>
                     </select>
                 </div>
 
@@ -2423,6 +2450,60 @@ app.post("/api/lessons/assign-examples", (req, res) => {
         dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
     };
 
+
+    const defaultLessonId3 = "lesson_def_3_" + Math.random().toString(36).substring(2, 9);
+    db.lessons[defaultLessonId3] = {
+        id: defaultLessonId3,
+        title: "Example Test: General Knowledge",
+        content: "A short test to demonstrate the testing functionality. Make sure you don't exit fullscreen!",
+        type: "test",
+        slides: [
+            {
+                title: "Question 1",
+                content: "Please answer the following question.",
+                question: {
+                    text: "What is the capital of France?",
+                    options: ["London", "Berlin", "Paris", "Madrid"],
+                    correctAnswer: "C"
+                }
+            },
+            {
+                title: "Question 2",
+                content: "Careful, remember not to leave the test window.",
+                question: {
+                    text: "Which planet is known as the Red Planet?",
+                    options: ["Earth", "Mars", "Jupiter", "Venus"],
+                    correctAnswer: "B"
+                }
+            }
+        ]
+    };
+
+    const assignmentId3 = "assign_def_3_" + Math.random().toString(36).substring(2, 9);
+    db.assignments[assignmentId3] = {
+        id: assignmentId3,
+        classCode: teacher.classCode,
+        lessonId: defaultLessonId3,
+        dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+    };
+
+    const defaultLessonId4 = "lesson_def_4_" + Math.random().toString(36).substring(2, 9);
+    db.lessons[defaultLessonId4] = {
+        id: defaultLessonId4,
+        title: "Example Guide Lesson",
+        content: "This is an example of a guide that runs inside an actual site.",
+        type: "guide",
+        guideURL: "https://is.gd/ZHCymn"
+    };
+
+    const assignmentId4 = "assign_def_4_" + Math.random().toString(36).substring(2, 9);
+    db.assignments[assignmentId4] = {
+        id: assignmentId4,
+        classCode: teacher.classCode,
+        lessonId: defaultLessonId4,
+        dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+    };
+
     res.redirect("/teacher/dashboard?msg=examples_assigned");
 });
 
@@ -2640,7 +2721,7 @@ app.get("/student/study-groups/:assignmentId", (req, res) => {
     res.send(renderDashboard(content, student));
 });
 
-app.get("/student/lesson/:assignmentId", (req, res) => {
+app.get(["/student/lesson/:assignmentId", "/student/test/:assignmentId"], (req, res) => {
     if (!req.session.userId || !db.users[req.session.userId]) return res.redirect("/");
     const student = db.users[req.session.userId];
     
@@ -2788,7 +2869,13 @@ app.get("/student/lesson/:assignmentId", (req, res) => {
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ assignmentId, slideIndex: totalSlides })
                     }).then(() => {
+                        
+                    if ('${lesson.type}' === 'test') {
+                        window.postMessage({ type: "CLASSLOOP_END_TEST" }, "*"); 
+                    } else {
                         window.location.href = '/student/dashboard';
+                    }
+
                     });
                 }
             }
@@ -2815,7 +2902,13 @@ app.get("/student/lesson/:assignmentId", (req, res) => {
                                     headers: { 'Content-Type': 'application/json' },
                                     body: JSON.stringify({ assignmentId, slideIndex: totalSlides })
                                 }).then(() => {
-                                    window.location.href = '/student/dashboard';
+                                    
+                    if ('${lesson.type}' === 'test') {
+                        window.postMessage({ type: "CLASSLOOP_END_TEST" }, "*"); 
+                    } else {
+                        window.location.href = '/student/dashboard';
+                    }
+
                                 });
                             }
                         });
@@ -2928,6 +3021,257 @@ Provide a 2-3 sentence CONSTRUCTIVE HINT. Do NOT give them the direct answer. Gu
 });
 
 // --- Chat & Student Contact Teacher Routes ---
+
+app.get("/student/research", (req, res) => {
+    if (!req.session.userId || !db.users[req.session.userId]) return res.redirect("/");
+    const user = db.users[req.session.userId];
+
+    let content = `
+        <div class="mb-8 flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <a href="/student/dashboard" class="p-2.5 bg-white border border-zinc-200 rounded-lg hover:bg-zinc-50 transition-colors"><i data-lucide="arrow-left" class="w-4 h-4 text-zinc-600"></i></a>
+                <div>
+                    <h1 class="text-2xl font-bold tracking-tight text-zinc-900">Research Center</h1>
+                    <p class="text-sm text-zinc-500 mt-0.5">Find sources, summarize, generate citations</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-2 space-y-6">
+                <!-- Search Box -->
+                <div class="bg-white app-border shadow-sm rounded-xl p-6">
+                    <form id="search-form" class="flex gap-3">
+                        <input type="text" id="search-query" class="flex-1 p-3 bg-zinc-50 border border-zinc-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500" placeholder="Enter topic or keywords..." required>
+                        <button type="submit" class="px-6 py-3 bg-emerald-600 text-white font-bold rounded-lg hover:bg-emerald-700 transition-colors flex items-center gap-2">
+                            <i data-lucide="search" class="w-4 h-4"></i> Search
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Results -->
+                <div id="results-container" class="space-y-4"></div>
+            </div>
+
+            <!-- AI Sidebar -->
+            <div class="lg:col-span-1 space-y-6">
+                <!-- Citations & Summary Box -->
+                <div id="ai-summary-box" class="bg-indigo-50 border border-indigo-100 rounded-xl p-5 shadow-sm hidden">
+                    <div class="flex items-center gap-2 mb-3">
+                        <i data-lucide="sparkles" class="w-4 h-4 text-indigo-600"></i>
+                        <h3 class="font-bold text-indigo-900">AI Summary & Citations</h3>
+                    </div>
+                    <div id="ai-summary-content" class="text-sm text-indigo-800 space-y-3"></div>
+                </div>
+
+                <!-- Chat with LLM -->
+                <div class="bg-white border border-zinc-200 rounded-xl flex flex-col h-[500px] shadow-sm">
+                    <div class="p-4 border-b border-zinc-100 bg-zinc-50 rounded-t-xl">
+                        <h3 class="font-bold border-zinc-900 text-sm flex items-center gap-2"><i data-lucide="message-circle" class="w-4 h-4"></i> Research Assistant</h3>
+                    </div>
+                    <div id="chat-messages" class="flex-1 p-4 overflow-y-auto space-y-4 text-sm bg-white">
+                        <div class="p-3 bg-zinc-100 rounded-lg text-zinc-800 w-[90%] float-left">Hi! Search for something first, and I can answer specific questions based on the results!</div>
+                        <div class="clear-both"></div>
+                    </div>
+                    <div class="p-3 border-t border-zinc-100 bg-white rounded-b-xl">
+                        <form id="chat-form" class="flex gap-2">
+                            <input type="text" id="chat-input" class="flex-1 p-2 border border-zinc-200 rounded focus:outline-none focus:border-zinc-400" placeholder="Ask about the results..." required disabled>
+                            <button type="submit" id="chat-btn" class="p-2 bg-zinc-900 text-white rounded hover:bg-zinc-800 disabled:opacity-50" disabled><i data-lucide="send" class="w-4 h-4"></i></button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            let cachedResults = [];
+
+            document.getElementById('search-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const q = document.getElementById('search-query').value;
+                const resultsContainer = document.getElementById('results-container');
+                const summaryBox = document.getElementById('ai-summary-box');
+                const summaryContent = document.getElementById('ai-summary-content');
+                const chatInput = document.getElementById('chat-input');
+                const chatBtn = document.getElementById('chat-btn');
+
+                resultsContainer.innerHTML = '<div class="p-8 text-center text-zinc-500"><i data-lucide="loader" class="w-8 h-8 mx-auto mb-2 animate-spin"></i> Searching academic sources...</div>';
+                lucide.createIcons();
+
+                // Call search
+                try {
+                    const res = await fetch('/api/research/search?q=' + encodeURIComponent(q));
+                    const data = await res.json();
+                    
+                    if (!data.results || data.results.length === 0) {
+                        resultsContainer.innerHTML = '<div class="p-8 text-center bg-white border border-zinc-200 rounded-xl">No results found for your query. Try different keywords.</div>';
+                        return;
+                    }
+
+                    cachedResults = data.results.slice(0, 5); // take top 5
+                    
+                    let html = '';
+                    cachedResults.forEach((r, idx) => {
+                        html += '<div class="p-5 bg-white border border-zinc-200 rounded-xl hover:shadow-md transition-shadow">' +
+                                '<a href="' + r.url + '" target="_blank" class="text-blue-600 font-bold text-lg hover:underline">' + r.title + '</a>' +
+                                '<div class="text-xs text-green-700 mb-2 truncate">' + r.url + '</div>' +
+                                '<p class="text-sm text-zinc-600">' + r.description + '</p>' +
+                            '</div>';
+                    });
+                    resultsContainer.innerHTML = html;
+
+                    // Fetch AI summary using these results
+                    summaryBox.classList.remove('hidden');
+                    summaryContent.innerHTML = '<i data-lucide="loader" class="w-4 h-4 inline animate-spin"></i> Generating summary & citations...';
+                    lucide.createIcons();
+
+                    const aiRes = await fetch('/api/research/summarize', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ query: q, results: cachedResults })
+                    });
+                    const aiData = await aiRes.json();
+                    if (aiData.result) {
+                        let parsed = aiData.result.replace(/\n/g, '<br>');
+                        summaryContent.innerHTML = parsed;
+                        
+                        // Enable chat
+                        chatInput.disabled = false;
+                        chatBtn.disabled = false;
+                    } else {
+                        summaryContent.innerHTML = 'Failed to generate summary.';
+                    }
+
+                } catch (err) {
+                    resultsContainer.innerHTML = '<div class="p-8 text-center text-red-500 bg-red-50 border border-red-200 rounded-xl">Error executing search.</div>';
+                }
+            });
+
+            document.getElementById('chat-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const input = document.getElementById('chat-input');
+                const msg = input.value;
+                if (!msg.trim()) return;
+
+                const messagesDiv = document.getElementById('chat-messages');
+
+                // User message
+                messagesDiv.innerHTML += '<div class="p-3 bg-zinc-900 border border-zinc-800 text-white rounded-lg w-[85%] float-right mb-4 shadow-sm">' + msg + '</div><div class="clear-both"></div>';
+                input.value = '';
+
+                // Loading bubble
+                const loaderId = 'loader_' + Date.now();
+                messagesDiv.innerHTML += '<div id="' + loaderId + '" class="p-3 bg-zinc-100 rounded-lg text-zinc-800 w-[85%] float-left mb-4"><i data-lucide="loader" class="w-3 h-3 inline animate-spin"></i></div><div class="clear-both"></div>';
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+                lucide.createIcons();
+
+                try {
+                    const res = await fetch('/api/research/chat', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ message: msg, results: cachedResults })
+                    });
+                    const data = await res.json();
+                    
+                    document.getElementById(loaderId).remove();
+
+                    messagesDiv.innerHTML += '<div class="p-3 bg-emerald-50 border border-emerald-100 rounded-lg text-emerald-900 w-[85%] float-left mb-4 shadow-sm">' + data.reply.replace(/\n/g, '<br>') + '</div><div class="clear-both"></div>';
+                    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+                } catch (err) {
+                    document.getElementById(loaderId).innerText = "Error: Couldn't connect to AI.";
+                }
+            });
+        </script>
+    `;
+
+    res.send(renderDashboard(content, user));
+});
+
+app.get("/api/research/search", async (req, res) => {
+    try {
+        const query = req.query.q;
+        if (!query) return res.status(400).json({ error: "Missing query" });
+
+        const searchUrl = "https://search.hackclub.com/res/v1/web/search?q=" + encodeURIComponent(query);
+        const apiKey = process.env.SEARCH_KEY || "";
+
+        const response = await fetch(searchUrl, {
+            headers: {
+                "Authorization": "Bearer " + apiKey,
+                "Content-Type": "application/json"
+            }
+        });
+        
+        if (!response.ok) {
+            return res.status(response.status).json({ error: "Failed from Hack Club API" });
+        }
+
+        const data = await response.json();
+        // data structure usually: { results: [{ title, url, description, ... }] }
+        
+        res.json({ results: data.results || (data.web && data.web.results) || [] });
+
+    } catch (e) {
+        console.error("Research error:", e);
+        res.status(500).json({ error: e.message });
+    }
+});
+
+app.post("/api/research/summarize", express.json(), async (req, res) => {
+    try {
+        const { query, results } = req.body;
+        if (!results || results.length === 0) return res.json({ result: "No results to summarize." });
+
+        let contextText = results.map(r => `Title: ${r.title}\nURL: ${r.url}\nDescription: ${r.description}`).join("\n\n");
+
+        const prompt = `A student is doing research on "${query}". I have the following search results:\n\n${contextText}\n\nPlease provide:\n1. A brief short summary (1-2 paragraphs) synthesizing these results.\n2. An auto-generated MLA Citation list for these web sources. For MLA citations of websites, do your best with the Title, URL, and assume today's date if date is missing.`;
+
+        const completion = await groq.chat.completions.create({
+            messages: [{ role: "user", content: prompt }],
+            model: "llama-3.3-70b-versatile",
+        }).catch(async (e) => {
+            console.error("Fallback to mixtral", e);
+            return await groq.chat.completions.create({
+                messages: [{ role: "user", content: prompt }],
+                model: "mixtral-8x7b-32768",
+            });
+        });
+
+        res.json({ result: completion.choices[0].message.content });
+    } catch (e) {
+        console.error("Summary error:", e);
+        res.status(500).json({ error: e.message });
+    }
+});
+
+app.post("/api/research/chat", express.json(), async (req, res) => {
+    try {
+        const { message, results } = req.body;
+        if (!message) return res.status(400).json({ error: "No message provided." });
+
+        let contextText = (results || []).map(r => `Title: ${r.title}\nDescription: ${r.description}`).join("\n\n");
+
+        const prompt = `I am a student researching. Use the following context from my search results to answer my question. If the answer is not in the context, use your general knowledge but state that it wasn't in the provided sources.\n\nSources:\n${contextText}\n\nStudent's Question: ${message}`;
+
+        const completion = await groq.chat.completions.create({
+            messages: [{ role: "user", content: prompt }],
+            model: "llama-3.3-70b-versatile",
+        }).catch(async () => {
+            return await groq.chat.completions.create({
+                messages: [{ role: "user", content: prompt }],
+                model: "mixtral-8x7b-32768",
+            });
+        });
+
+        res.json({ reply: completion.choices[0].message.content });
+    } catch (e) {
+        console.error("Chat error:", e);
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// end of new routes
+
 app.get("/student/contact-teacher", (req, res) => {
     if (!req.session.userId || !db.users[req.session.userId]) return res.redirect("/");
     const user = db.users[req.session.userId];
@@ -3102,11 +3446,11 @@ io.on('connection', (socket) => {
 
 
 
-app.post('/api/markGuideCompleted', express.json(), (req, res) => {
-    const { guideURL } = req.body;
+app.get('/api/markGuideCompleted', (req, res) => {
+    const { guideURL } = req.params.GuideURL;
     
     if (!req.session.userId || !db.users[req.session.userId]) {
-        return res.status(401).json({ error: "Please log in first", redirect: "/student/login" });
+        return res.redirect("/student/login");
     }
 
     const student = db.users[req.session.userId];
@@ -3119,7 +3463,7 @@ app.post('/api/markGuideCompleted', express.json(), (req, res) => {
     });
 
     if (!assignment) {
-        return res.status(403).json({ error: "This Account does not have this Guide assigned." });
+        return res.send("This Account does not have this Guide assigned.");
     }
 
     const progressId = student.id + "_" + assignment.id;
@@ -3139,7 +3483,7 @@ app.post('/api/markGuideCompleted', express.json(), (req, res) => {
     
     fs.writeFileSync(path.join(__dirname, 'db.json'), JSON.stringify(db, null, 2));
     
-    return res.status(200).json({ success: true, redirect: "/student/dashboard" });
+    return res.redirect("/student/dashboard");
 });
 
 
