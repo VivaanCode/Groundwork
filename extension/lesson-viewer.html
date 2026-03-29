@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lesson hub — ClassLoop</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,400..700;1,14..32,400..700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="lesson-viewer.css" />
+  </head>
+  <body>
+    <div class="shell">
+      <header class="hero">
+        <p class="eyebrow">ClassLoop · Lesson hub</p>
+        <h1 id="lessonTitle">Lesson</h1>
+        <p id="contextLine" class="context"></p>
+      </header>
+
+      <div class="layout">
+        <section class="panel resources-panel">
+          <h2>Resources</h2>
+          <p id="resourcesEmpty" class="muted">No links in this lesson yet.</p>
+          <ul id="resourceList" class="resource-list"></ul>
+        </section>
+
+        <section class="panel chat-panel">
+          <div class="chat-head">
+            <h2>Ask the lesson assistant</h2>
+            <p class="muted small">Uses your teacher’s prompt and these resources. Add a Featherless API key in extension options if needed.</p>
+          </div>
+          <div id="chatLog" class="chat-log" aria-live="polite"></div>
+          <form id="chatForm" class="chat-form">
+            <textarea
+              id="chatInput"
+              rows="2"
+              placeholder="Ask a question about this lesson or a resource…"
+              autocomplete="off"
+            ></textarea>
+            <button type="submit" class="primary" id="btnSend">Send</button>
+          </form>
+          <p id="chatStatus" class="status"></p>
+        </section>
+      </div>
+    </div>
+    <script src="lesson-viewer.js"></script>
+  </body>
+</html>

@@ -1,0 +1,40 @@
+{
+  "manifest_version": 3,
+  "name": "ClassLoop Guided Lesson",
+  "version": "1.0.0",
+  "description": "Teachers build interactive guides and full lessons with optional Featherless AI.",
+  "permissions": ["storage", "tabs", "scripting"],
+  "host_permissions": [
+    "http://localhost:3000/*",
+    "http://127.0.0.1:3000/*",
+    "https://api.featherless.ai/*",
+    "https://is.gd/*",
+    "https://classloop.xyz/*",
+    "<all_urls>"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["vendor/html2canvas.min.js", "content.js"],
+      "run_at": "document_idle",
+      "all_frames": false
+    }
+  ],
+  "action": {
+    "default_title": "ClassLoop Guide",
+    "default_popup": "popup.html"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["vendor/pdf.worker.min.mjs"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}

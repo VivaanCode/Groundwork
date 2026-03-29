@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Lesson hub editor — ClassLoop</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,400..700;1,14..32,400..700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="lesson-editor.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="topbar">
+        <div class="brand">
+          <span class="logo"><span></span></span>
+          <div>
+            <h1>Lesson hub</h1>
+            <p id="launchCtx" class="ctx"></p>
+          </div>
+        </div>
+        <div class="top-actions">
+          <button type="button" id="btnSave">Save draft</button>
+          <button type="button" class="primary" id="btnCopyShare">Copy student link</button>
+        </div>
+      </header>
+
+      <p id="shareHint" class="share-hint muted"></p>
+
+      <section class="card">
+        <label for="lessonTitle">Lesson title</label>
+        <input id="lessonTitle" type="text" placeholder="e.g. Photosynthesis resources" />
+      </section>
+
+      <div class="grid">
+        <section class="card stretch">
+          <div class="section-head">
+            <h2>Resources (links only)</h2>
+            <button type="button" class="accent" id="btnAddLink">Add link</button>
+          </div>
+          <p class="muted small">Paste URLs your students should open. Titles are optional labels.</p>
+          <div id="linkRows" class="link-rows"></div>
+        </section>
+
+        <section class="card stretch">
+          <h2>AI tuning</h2>
+          <p class="muted small">
+            One prompt that shapes how the assistant talks to students (tone, level, what to emphasize). It also sees
+            the page you opened the editor from and every link below.
+          </p>
+          <label for="aiPrompt">Instructions for the lesson assistant</label>
+          <textarea
+            id="aiPrompt"
+            rows="10"
+            placeholder="Example: You are a patient middle-school science tutor. Keep answers under 5 sentences. Encourage students to click the resources and cite which link helped."
+          ></textarea>
+        </section>
+      </div>
+
+      <p id="statusLine" class="status"></p>
+    </div>
+    <script src="lesson-editor.js"></script>
+  </body>
+</html>

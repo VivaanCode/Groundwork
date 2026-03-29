@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>ClassLoop Guide — Options</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,400..700;1,14..32,400..700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        font-family: Inter, system-ui, sans-serif;
+        background: #fbfbfb;
+        color: #18181b;
+        margin: 0;
+        padding: 28px 32px 40px;
+        max-width: 520px;
+      }
+      h1 {
+        font-size: 1.15rem;
+        font-weight: 600;
+        margin: 0 0 6px;
+        letter-spacing: -0.02em;
+      }
+      p.lead {
+        margin: 0 0 22px;
+        font-size: 13px;
+        color: #71717a;
+        line-height: 1.5;
+      }
+      label {
+        display: block;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: #a1a1aa;
+        margin-bottom: 6px;
+      }
+      input[type="text"],
+      input[type="password"] {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #e4e4e7;
+        border-radius: 8px;
+        font-size: 13px;
+        font-family: ui-monospace, monospace;
+        background: #fff;
+      }
+      input:focus {
+        outline: none;
+        border-color: #d4d4d8;
+        box-shadow: 0 0 0 3px rgba(230, 126, 34, 0.15);
+      }
+      .field {
+        margin-bottom: 18px;
+      }
+      .row-check {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 22px;
+      }
+      .row-check input {
+        width: 16px;
+        height: 16px;
+        accent-color: #e67e22;
+      }
+      .row-check label {
+        margin: 0;
+        text-transform: none;
+        font-weight: 500;
+        font-size: 13px;
+        color: #3f3f46;
+        letter-spacing: 0;
+      }
+      button {
+        background: #18181b;
+        color: #fff;
+        border: 0;
+        padding: 10px 18px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        font-family: inherit;
+      }
+      button:hover {
+        background: #27272a;
+      }
+      #status {
+        margin-top: 14px;
+        font-size: 12px;
+        color: #71717a;
+      }
+      #status.ok {
+        color: #16a34a;
+      }
+      #status.err {
+        color: #dc2626;
+      }
+      .note {
+        margin-top: 24px;
+        padding: 12px 14px;
+        background: #f4f4f5;
+        border: 1px solid #e4e4e7;
+        border-radius: 10px;
+        font-size: 12px;
+        color: #52525b;
+        line-height: 1.45;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>AI &amp; API</h1>
+    <p class="lead">
+      Featherless powers guide polish and lesson assists. Keys stay in this browser only (Chrome sync
+      storage is not used for the secret).
+    </p>
+
+    <div class="field">
+      <label for="apiKey">Featherless API key</label>
+      <input type="password" id="apiKey" autocomplete="off" placeholder="Paste key" />
+    </div>
+
+    <div class="field">
+      <label for="apiBase">API base URL</label>
+      <input type="text" id="apiBase" autocomplete="off" placeholder="https://api.featherless.ai/v1" />
+      <p style="margin: 6px 0 0; font-size: 11px; color: #71717a; line-height: 1.4">
+        Must end with <code style="font-size: 10px">/v1</code>. Change only if Featherless gives you a different
+        endpoint. If you see <strong>Failed to fetch</strong>, confirm this URL and that nothing blocks
+        <code style="font-size: 10px">api.featherless.ai</code>.
+      </p>
+    </div>
+
+    <div class="field">
+      <label for="model">Model id</label>
+      <input type="text" id="model" placeholder="moonshotai/Kimi-K2.5" />
+      <p style="margin: 6px 0 0; font-size: 11px; color: #71717a; line-height: 1.4">
+        Default <strong>moonshotai/Kimi-K2.5</strong>. The extension sends <code style="font-size: 10px">top_p</code> /
+        <code style="font-size: 10px">top_k</code> for Kimi-shaped models. Other models:
+        <a href="https://api.featherless.ai/v1/models" target="_blank" rel="noopener">/v1/models</a>.
+      </p>
+    </div>
+
+    <div class="field">
+      <label for="guideModel">Guide compile model (fast)</label>
+      <input type="text" id="guideModel" placeholder="Qwen/Qwen2.5-7B-Instruct" />
+      <p style="margin: 6px 0 0; font-size: 11px; color: #71717a; line-height: 1.4">
+        Used only for interactive guide generation. Default is a fast 7B model for lower latency.
+      </p>
+    </div>
+
+    <div class="field">
+      <label for="studentEmail">Student email (ClassLoop)</label>
+      <input type="text" id="studentEmail" placeholder="you@school.edu" />
+      <p style="margin: 6px 0 0; font-size: 11px; color: #71717a; line-height: 1.4">
+        Used to mark guides as completed. Saved locally.
+      </p>
+    </div>
+
+    <div class="row-check">
+      <input type="checkbox" id="aiDefaultOn" />
+      <label for="aiDefaultOn">AI assists on by default in the lesson editor</label>
+    </div>
+
+    <button type="button" id="save">Save</button>
+    <p id="status"></p>
+
+    <div class="note">
+      <strong>.env</strong> is for your own reference during development; the unpacked extension reads
+      credentials from here after you save. Add <code>.env</code> to gitignore (already) and never commit
+      keys.
+    </div>
+
+    <script src="options.js"></script>
+  </body>
+</html>

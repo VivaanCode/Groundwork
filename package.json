@@ -1,0 +1,26 @@
+{
+  "name": "groundwork",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "vendor": "node -e \"const fs=require('fs');const p=require('path');const r='node_modules';fs.mkdirSync('extension/vendor',{recursive:true});fs.copyFileSync(p.join(r,'html2canvas/dist/html2canvas.min.js'),'extension/vendor/html2canvas.min.js');fs.copyFileSync(p.join(r,'pdfjs-dist/build/pdf.min.mjs'),'extension/vendor/pdf.mjs');fs.copyFileSync(p.join(r,'pdfjs-dist/build/pdf.worker.min.mjs'),'extension/vendor/pdf.worker.min.mjs');console.log('vendor ok');\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/VivaanCode/Groundwork.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/VivaanCode/Groundwork/issues"
+  },
+  "homepage": "https://github.com/VivaanCode/Groundwork#readme",
+  "dependencies": {
+    "html2canvas": "^1.4.1",
+    "pdfjs-dist": "^4.4.168"
+  }
+}

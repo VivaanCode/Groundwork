@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>ClassLoop Guide</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,400..700;1,14..32,400..700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      * { box-sizing: border-box; }
+      body {
+        width: 372px;
+        margin: 0;
+        padding: 14px;
+        font-family: Inter, system-ui, sans-serif;
+        background: #f5f5f6;
+        color: #111113;
+      }
+      .card {
+        background: #fff;
+        border: 1px solid #e9e9eb;
+        border-radius: 14px;
+        padding: 14px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+      }
+      .head {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 12px;
+      }
+      .logo {
+        width: 26px;
+        height: 26px;
+        border-radius: 8px;
+        background: #111113;
+        display: grid;
+        place-items: center;
+        flex-shrink: 0;
+      }
+      .logo i {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #fff;
+      }
+      h1 {
+        margin: 0;
+        font-size: 17px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+      }
+      .sub {
+        margin: 2px 0 0;
+        color: #73737a;
+        font-size: 12px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+      .pane {
+        border: 1px solid #efeff1;
+        border-radius: 11px;
+        padding: 10px;
+      }
+      .pane h2 {
+        margin: 0 0 8px;
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: #9b9ba3;
+      }
+      button {
+        width: 100%;
+        border: 1px solid #e6e6e9;
+        border-radius: 10px;
+        padding: 10px 10px;
+        font-family: inherit;
+        font-size: 13px;
+        font-weight: 650;
+        background: #fff;
+        color: #111113;
+        cursor: pointer;
+      }
+      button + button { margin-top: 8px; }
+      button:disabled { opacity: 0.45; cursor: not-allowed; }
+      #btnToggleGuide {
+        background: #111113;
+        border-color: #111113;
+        color: #fff;
+      }
+      #btnToggleGuide.recording {
+        background: #fff;
+        color: #111113;
+        border-color: #111113;
+      }
+      #btnShareGuideUrl { background: #fff; }
+      #btnGuideEditor { background: #f8f8f9; }
+      .status {
+        margin: 11px 2px 0;
+        min-height: 18px;
+        font-size: 12px;
+        color: #70707a;
+      }
+      .status.err { color: #b91c1c; }
+      .status.ok { color: #15803d; }
+      .meta {
+        margin-top: 4px;
+        font-size: 11px;
+        color: #a2a2aa;
+      }
+      .foot {
+        margin-top: 10px;
+        display: flex;
+        gap: 14px;
+      }
+      .foot button {
+        width: auto;
+        border: 0;
+        padding: 0;
+        background: none;
+        color: #70707a;
+        font-size: 11px;
+        font-weight: 600;
+      }
+      .foot button:hover {
+        color: #111113;
+        text-decoration: underline;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <header class="head">
+        <div class="logo"><i></i></div>
+        <div>
+          <h1>ClassLoop Guide</h1>
+          <p class="sub" id="subLine">Start recording, stop &amp; compile, then share.</p>
+        </div>
+      </header>
+
+      <section class="grid">
+        <div class="pane">
+          <h2>Record</h2>
+          <button id="btnToggleGuide" type="button">Start recording</button>
+        </div>
+        <div class="pane">
+          <h2>Share</h2>
+          <button id="btnShareGuideUrl" type="button">Copy share URL</button>
+          <button id="btnGuideEditor" type="button">Guide editor</button>
+        </div>
+      </section>
+
+      <p id="statusLine" class="status"></p>
+      <div id="metaLine" class="meta"></div>
+
+      <div class="foot">
+        <button id="btnOptions" type="button">AI settings</button>
+        <button id="btnRefresh" type="button">Refresh</button>
+      </div>
+    </div>
+    <script src="popup.js"></script>
+  </body>
+</html>
