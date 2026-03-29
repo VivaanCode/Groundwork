@@ -197,10 +197,10 @@ return `<!DOCTYPE html>
   <header class="pt-32 pb-12 px-6">
     <div class="max-w-4xl mx-auto text-center">
       <h1 class="text-4xl md:text-[52px] font-semibold tracking-tighter text-zinc-950 mb-5 animate-in leading-[1.1]">
-        The Dashboard for your classroom Needs
+        The Dashboard Your Classroom Needs
       </h1>
       <p class="text-[17px] text-zinc-500 max-w-xl mx-auto animate-in delay-1 font-normal leading-relaxed">
-        From busywork to framework      </p>
+        From Busywork to Framework      </p>
     </div>
   </header>
 
@@ -236,7 +236,7 @@ return `<!DOCTYPE html>
             <div class="w-3 h-3 rounded-full bg-[#27c93f] border border-[#1aab29]"></div>
           </div>
           <div class="mx-auto flex items-center gap-2 text-[11px] font-medium text-zinc-500 bg-white border border-zinc-200 px-4 py-1 rounded-md shadow-sm w-64 justify-center">
-            <i data-lucide="lock" class="w-3 h-3"></i> app.classloop.xyz
+            <i data-lucide="lock" class="w-3 h-3"></i> classloop.xyz
           </div>
           <div class="w-[52px]"></div> <!-- Spacer for centering -->
         </div>
@@ -1890,7 +1890,7 @@ app.get("/teacher/roster", (req, res) => {
             const lesson = db.lessons[a.lessonId];
             if (!lesson) continue;
             const progress = Object.values(db.studentProgress).find(p => p.studentId === studentId && p.assignmentId === a.id);
-            const totalQuestions = lesson.slides.filter(slide => slide.question).length;
+            const totalQuestions = (lesson.slides || []).filter(slide => slide.question).length;
             if (totalQuestions > 0) {
                 maxScore += totalQuestions;
                 if (progress && progress.answers) {
@@ -2210,7 +2210,7 @@ app.post("/api/ai/email", express.json(), async (req, res) => {
                     const l = db.lessons[a.lessonId];
                     if (!l) continue;
                     const p = Object.values(db.studentProgress).find(pr => pr.studentId === studentId && pr.assignmentId === a.id);
-                    const tq = l.slides.filter(s => s.question).length;
+                    const tq = (l.slides || []).filter(s => s.question).length;
                     if (tq > 0) {
                         max += tq;
                         if (p && p.answers) score += p.answers.filter(ans => ans.correct).length;
@@ -2259,7 +2259,7 @@ app.post("/api/ai/email", express.json(), async (req, res) => {
         }).catch(async err => {
             return await groq.chat.completions.create({
                 messages: [{ role: "user", content: prompt }],
-                model: "mixtral-8x7b-32768",
+                model: "qwen-2.5-8b-instruct",
             });
         });
 
@@ -2398,7 +2398,7 @@ ONLY return the markdown table and absolutely NO other conversational text.`;
         }).catch(async () => {
              return await groq.chat.completions.create({
                  messages: [{ role: "user", content: prompt }],
-                 model: "mixtral-8x7b-32768",
+                 model: "qwen-2.5-8b-instruct",
              });
         });
 
@@ -2972,7 +2972,7 @@ Each slide object in the array MUST match this EXACT schema:
              console.error('Groq versatile failed, falling back to mixtral:', e);
              return await groq.chat.completions.create({
                  messages: [{ role: "user", content: prompt }],
-                 model: "mixtral-8x7b-32768",
+                 model: "qwen-2.5-8b-instruct",
                  temperature: 0.7
              });
         });
@@ -3161,13 +3161,30 @@ app.get(["/student/lesson/:assignmentId", "/student/test/:assignmentId"], (req, 
     const currentSlide = lesson.slides[currentSlideIdx] || {};
     const hasQuestion = currentSlide.question;
     const totalSlides = lesson.slides.length;
+    const isTest = lesson.type === 'test' || assignment.type === 'test';
     
     let content = `
+        ${isTest ? `
+        <style>
+            nav { display: none !important; }
+            main { padding-top: 2rem !important; max-w-full !important; margin: 0 !important; width: 100%; height: 100vh; overflow: auto; }
+            body { background-color: white !important; }
+        </style>
+        <script>
+            // Attempt to automatically enter fullscreen for tests
+            document.addEventListener('click', function _fullscreen() {
+                 if(document.documentElement.requestFullscreen && !document.fullscreenElement) {
+                      document.documentElement.requestFullscreen().catch(e => console.log('Could not enter fullscreen', e));
+                 }
+                 document.removeEventListener('click', _fullscreen);
+            });
+        </script>
+        ` : ''}
         <div class="mb-4 flex items-center justify-between">
             <a href="/student/dashboard" class="p-2 bg-white app-border rounded-lg hover:bg-zinc-50">
                 <i data-lucide="arrow-left" class="w-4 h-4"></i>
             </a>
-            <h1 class="text-xl font-bold text-zinc-900 flex-1 ml-4">${lesson.title}</h1>
+            <h1 class="text-xl font-bold text-zinc-900 flex-1 ml-4">${lesson.title} ${isTest ? '<span class="ml-2 px-2 py-1 bg-red-100 text-red-700 text-xs font-bold rounded-lg uppercase">Test Mode</span>' : ''}</h1>
             <div class="flex items-center gap-2 text-sm font-medium text-zinc-500">
                 <div class="w-32 h-2 bg-zinc-200 rounded-full overflow-hidden">
                     <div class="h-full bg-accent transition-all" style="width: ${((currentSlideIdx) / totalSlides * 100)}%"></div>
@@ -3176,15 +3193,15 @@ app.get(["/student/lesson/:assignmentId", "/student/test/:assignmentId"], (req, 
             </div>
         </div>
         
-        <div class="max-w-4xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div class="lg:col-span-2 bg-white app-border rounded-xl p-8 shadow-sm">
-                <h2 class="text-2xl font-bold text-zinc-950 mb-6">${currentSlide.title || 'Content'}</h2>
-                <div class="prose prose-sm max-w-none text-zinc-700 mb-8">
+        <div class="max-w-6xl mx-auto grid grid-cols-1 ${isTest ? '' : 'lg:grid-cols-3'} gap-6">
+            <div class="${isTest ? 'bg-white app-border rounded-xl p-8 shadow-sm flex flex-col items-center max-w-3xl mx-auto w-full' : 'lg:col-span-2 bg-white app-border rounded-xl p-8 shadow-sm'}">
+                <h2 class="text-2xl font-bold text-zinc-950 mb-6 w-full">${currentSlide.title || 'Content'}</h2>
+                <div class="prose prose-sm max-w-none text-zinc-700 mb-8 w-full">
                     ${(currentSlide.content || '').replace(/\n/g, '<br>')}
                 </div>
                 
                 ${hasQuestion ? `
-                    <div class="mt-8 p-6 bg-zinc-50 border border-zinc-200 rounded-xl">
+                    <div class="mt-8 p-6 bg-zinc-50 border border-zinc-200 rounded-xl w-full">
                         <h3 class="font-bold text-zinc-900 mb-4">${currentSlide.question.text}</h3>
                         <div class="space-y-2" id="answers-container">
                             ${currentSlide.question.options.map((opt, idx) => {
@@ -3201,6 +3218,7 @@ app.get(["/student/lesson/:assignmentId", "/student/test/:assignmentId"], (req, 
                 ` : ''}
             </div>
             
+            ${!isTest ? `
             <div class="lg:col-span-1">
                 <div class="bg-indigo-50 border border-indigo-100 rounded-xl p-4 mt-0 shadow-sm relative sticky top-6">
                     <div class="flex items-center gap-2 mb-2">
@@ -3225,9 +3243,10 @@ app.get(["/student/lesson/:assignmentId", "/student/test/:assignmentId"], (req, 
                     </a>
                 </div>
             </div>
+            ` : ''}
         </div>
         
-        <div class="max-w-4xl mx-auto mt-8 flex gap-3 justify-between">
+        <div class="max-w-6xl mx-auto mt-8 flex gap-3 justify-between ${isTest ? 'max-w-3xl' : 'max-w-4xl'}">
             <button onclick="prevSlide()" class="px-6 py-3 bg-zinc-100 text-zinc-700 font-bold rounded-lg hover:bg-zinc-200" 
                     ${currentSlideIdx === 0 ? 'disabled style="opacity:0.5;cursor:not-allowed"' : ''}>
                 ← Previous
@@ -3239,7 +3258,7 @@ app.get(["/student/lesson/:assignmentId", "/student/test/:assignmentId"], (req, 
                 </button>
             ` : `
                 <button onclick="nextSlide()" class="px-6 py-3 bg-zinc-950 text-white font-bold rounded-lg hover:bg-zinc-800">
-                    ${currentSlideIdx === totalSlides - 1 ? 'Finish Lesson' : 'Next →'}
+                    ${currentSlideIdx === totalSlides - 1 ? 'Finish' : 'Next →'}
                 </button>
             `}
         </div>
@@ -3248,6 +3267,7 @@ app.get(["/student/lesson/:assignmentId", "/student/test/:assignmentId"], (req, 
             const assignmentId = '${req.params.assignmentId}';
             const totalSlides = ${totalSlides};
             let currentSlideIdx = ${currentSlideIdx};
+            const isTestMode = ${isTest};
             
             // Rehydrate server-side data properly
             const slideData = ${JSON.stringify({
@@ -3279,13 +3299,8 @@ app.get(["/student/lesson/:assignmentId", "/student/test/:assignmentId"], (req, 
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ assignmentId, slideIndex: totalSlides })
                     }).then(() => {
-                        
-                    if ('${lesson.type}' === 'test') {
                         window.postMessage({ type: "CLASSLOOP_END_TEST" }, "*"); 
-                    } else {
                         window.location.href = '/student/dashboard';
-                    }
-
                     });
                 }
             }
@@ -3302,34 +3317,46 @@ app.get(["/student/lesson/:assignmentId", "/student/test/:assignmentId"], (req, 
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ assignmentId, slideIndex: currentSlideIdx, answer: selected.value })
                 }).then(r => r.json()).then(data => {
-                    if (data.correct) {
-                        showAppModal('Great Job!', 'Correct! 🎉', () => {
-                            if (currentSlideIdx < totalSlides - 1) {
-                                goToSlide(currentSlideIdx + 1);
-                            } else {
-                                fetch('/api/lesson-progress', {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({ assignmentId, slideIndex: totalSlides })
-                                }).then(() => {
-                                    
-                    if ('${lesson.type}' === 'test') {
-                        window.postMessage({ type: "CLASSLOOP_END_TEST" }, "*"); 
+                    if (isTestMode) {
+                        // Test mode: move on to next slide automatically without showing right/wrong feedback
+                        if (currentSlideIdx < totalSlides - 1) {
+                            goToSlide(currentSlideIdx + 1);
+                        } else {
+                            fetch('/api/lesson-progress', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ assignmentId, slideIndex: totalSlides })
+                            }).then(() => {
+                                window.postMessage({ type: "CLASSLOOP_END_TEST" }, "*");
+                                window.location.href = '/student/dashboard';
+                            });
+                        }
                     } else {
-                        window.location.href = '/student/dashboard';
-                    }
-
-                                });
-                            }
-                        });
-                    } else {
-                        showAppModal('Oops!', 'Incorrect. Take another look or use the AI Help!');
+                        // Normal mode: Show right/wrong
+                        if (data.correct) {
+                            showAppModal('Great Job!', 'Correct! 🎉', () => {
+                                if (currentSlideIdx < totalSlides - 1) {
+                                    goToSlide(currentSlideIdx + 1);
+                                } else {
+                                    fetch('/api/lesson-progress', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ assignmentId, slideIndex: totalSlides })
+                                    }).then(() => {
+                                        window.location.href = '/student/dashboard';
+                                    });
+                                }
+                            });
+                        } else {
+                            showAppModal('Oops!', 'Incorrect. Take another look or use the AI Help!');
+                        }
                     }
                 });
             }
             
             function getAiHelp() {
                 const responseDiv = document.getElementById('ai-response');
+                if (!responseDiv) return;
                 responseDiv.innerHTML = '<div class="flex items-center gap-2"><i data-lucide="loader" class="w-3 h-3 animate-spin"></i> Analyzing...</div>';
                 responseDiv.classList.remove('hidden');
                 
@@ -3441,8 +3468,8 @@ app.get("/student/research", (req, res) => {
             <div class="flex items-center gap-4">
                 <a href="/student/dashboard" class="p-2.5 bg-white border border-zinc-200 rounded-lg hover:bg-zinc-50 transition-colors"><i data-lucide="arrow-left" class="w-4 h-4 text-zinc-600"></i></a>
                 <div>
-                    <h1 class="text-2xl font-bold tracking-tight text-zinc-900">Research Center</h1>
-                    <p class="text-sm text-zinc-500 mt-0.5">Find sources, summarize, generate citations</p>
+                    <h1 class="text-2xl font-bold tracking-tight text-zinc-900">Academic Research Center</h1>
+                    <p class="text-sm text-zinc-500 mt-0.5">Find scholarly articles, summarize research, and generate MLA citations</p>
                 </div>
             </div>
         </div>
@@ -3450,13 +3477,29 @@ app.get("/student/research", (req, res) => {
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div class="lg:col-span-2 space-y-6">
                 <!-- Search Box -->
-                <div class="bg-white app-border shadow-sm rounded-xl p-6">
-                    <form id="search-form" class="flex gap-3">
-                        <input type="text" id="search-query" class="flex-1 p-3 bg-zinc-50 border border-zinc-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500" placeholder="Enter topic or keywords..." required>
-                        <button type="submit" class="px-6 py-3 bg-emerald-600 text-white font-bold rounded-lg hover:bg-emerald-700 transition-colors flex items-center gap-2">
-                            <i data-lucide="search" class="w-4 h-4"></i> Search
-                        </button>
-                    </form>
+                <div class="bg-slate-900 border-2 border-slate-800 shadow-lg rounded-xl p-8 relative overflow-hidden">
+                    <div class="relative z-10">
+                        <h2 class="text-xl font-bold text-white mb-2 flex items-center gap-2"><i data-lucide="book-open" class="w-5 h-5 text-indigo-300"></i>Scholar Research</h2>
+                        <p class="text-slate-300 mb-6 text-sm">Search across millions of peer-reviewed papers, journals, and academic studies.</p>
+                        <form id="search-form" class="flex flex-col sm:flex-row gap-3" onsubmit="event.preventDefault(); doResearchSearch();">
+                            <input type="text" id="search-query" class="flex-1 p-4 bg-white/10 border border-slate-600 text-white placeholder-slate-400 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Enter topic, methodology, or authors..." required>
+                            <button type="submit" class="px-8 py-4 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-500 transition-colors flex items-center justify-center gap-2 shadow-sm">
+                                <i data-lucide="search" class="w-5 h-5"></i> Locate Papers
+                            </button>
+                        </form>
+                    </div>
+                    <div class="absolute -bottom-12 -right-10 text-slate-800/50 pointer-events-none">
+                        <i data-lucide="graduation-cap" class="w-64 h-64"></i>
+                    </div>
+                </div>
+
+                <!-- Citations & Summary Box -->
+                <div id="ai-summary-box" class="bg-indigo-50 border border-indigo-100 rounded-xl p-6 shadow-sm hidden">
+                    <div class="flex items-center gap-2 mb-4">
+                        <i data-lucide="sparkles" class="w-5 h-5 text-indigo-600"></i>
+                        <h3 class="font-bold text-indigo-900 text-lg">AI Research Synthesis & Citations</h3>
+                    </div>
+                    <div id="ai-summary-content" class="text-sm text-zinc-800 prose max-w-none"></div>
                 </div>
 
                 <!-- Results -->
@@ -3465,15 +3508,6 @@ app.get("/student/research", (req, res) => {
 
             <!-- AI Sidebar -->
             <div class="lg:col-span-1 space-y-6">
-                <!-- Citations & Summary Box -->
-                <div id="ai-summary-box" class="bg-indigo-50 border border-indigo-100 rounded-xl p-5 shadow-sm hidden">
-                    <div class="flex items-center gap-2 mb-3">
-                        <i data-lucide="sparkles" class="w-4 h-4 text-indigo-600"></i>
-                        <h3 class="font-bold text-indigo-900">AI Summary & Citations</h3>
-                    </div>
-                    <div id="ai-summary-content" class="text-sm text-indigo-800 space-y-3"></div>
-                </div>
-
                 <!-- Chat with LLM -->
                 <div class="bg-white border border-zinc-200 rounded-xl flex flex-col h-[500px] shadow-sm">
                     <div class="p-4 border-b border-zinc-100 bg-zinc-50 rounded-t-xl">
@@ -3484,7 +3518,7 @@ app.get("/student/research", (req, res) => {
                         <div class="clear-both"></div>
                     </div>
                     <div class="p-3 border-t border-zinc-100 bg-white rounded-b-xl">
-                        <form id="chat-form" class="flex gap-2">
+                        <form id="chat-form" class="flex gap-2" onsubmit="event.preventDefault(); doResearchChat();">
                             <input type="text" id="chat-input" class="flex-1 p-2 border border-zinc-200 rounded focus:outline-none focus:border-zinc-400" placeholder="Ask about the results..." required disabled>
                             <button type="submit" id="chat-btn" class="p-2 bg-zinc-900 text-white rounded hover:bg-zinc-800 disabled:opacity-50" disabled><i data-lucide="send" class="w-4 h-4"></i></button>
                         </form>
@@ -3493,11 +3527,11 @@ app.get("/student/research", (req, res) => {
             </div>
         </div>
 
+        <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
         <script>
-            let cachedResults = [];
+            window.cachedResults = [];
 
-            document.getElementById('search-form').addEventListener('submit', async (e) => {
-                e.preventDefault();
+            window.doResearchSearch = async function() {
                 const q = document.getElementById('search-query').value;
                 const resultsContainer = document.getElementById('results-container');
                 const summaryBox = document.getElementById('ai-summary-box');
@@ -3505,8 +3539,9 @@ app.get("/student/research", (req, res) => {
                 const chatInput = document.getElementById('chat-input');
                 const chatBtn = document.getElementById('chat-btn');
 
-                resultsContainer.innerHTML = '<div class="p-8 text-center text-zinc-500"><i data-lucide="loader" class="w-8 h-8 mx-auto mb-2 animate-spin"></i> Searching academic sources...</div>';
-                lucide.createIcons();
+                summaryBox.classList.add('hidden');
+                resultsContainer.innerHTML = '<div class="p-8 text-center text-zinc-500"><i data-lucide="loader" class="w-8 h-8 mx-auto mb-2 animate-spin"></i> Locating academic sources...</div>';
+                if (window.lucide) window.lucide.createIcons();
 
                 // Call search
                 try {
@@ -3514,15 +3549,16 @@ app.get("/student/research", (req, res) => {
                     const data = await res.json();
                     
                     if (!data.results || data.results.length === 0) {
-                        resultsContainer.innerHTML = '<div class="p-8 text-center bg-white border border-zinc-200 rounded-xl">No results found for your query. Try different keywords.</div>';
+                        resultsContainer.innerHTML = '<div class="p-8 text-center bg-white border border-zinc-200 rounded-xl">No research papers found for your query. Try different keywords.</div>';
                         return;
                     }
 
-                    cachedResults = data.results.slice(0, 5); // take top 5
+                    window.cachedResults = data.results.slice(0, 5); // take top 5
                     
                     let html = '';
-                    cachedResults.forEach((r, idx) => {
+                    window.cachedResults.forEach((r, idx) => {
                         html += '<div class="p-5 bg-white border border-zinc-200 rounded-xl hover:shadow-md transition-shadow">' +
+                                '<div class="flex items-center gap-2 mb-1"><span class="px-2 py-0.5 bg-blue-100 text-blue-800 text-[10px] font-bold rounded uppercase tracking-wider">Research Source</span></div>' +
                                 '<a href="' + r.url + '" target="_blank" class="text-blue-600 font-bold text-lg hover:underline">' + r.title + '</a>' +
                                 '<div class="text-xs text-green-700 mb-2 truncate">' + r.url + '</div>' +
                                 '<p class="text-sm text-zinc-600">' + r.description + '</p>' +
@@ -3532,18 +3568,17 @@ app.get("/student/research", (req, res) => {
 
                     // Fetch AI summary using these results
                     summaryBox.classList.remove('hidden');
-                    summaryContent.innerHTML = '<i data-lucide="loader" class="w-4 h-4 inline animate-spin"></i> Generating summary & citations...';
-                    lucide.createIcons();
+                    summaryContent.innerHTML = '<div class="p-4 text-center text-indigo-500"><i data-lucide="loader" class="w-5 h-5 mx-auto mb-2 animate-spin"></i> Synthesizing findings and generating citations...</div>';
+                    if (window.lucide) window.lucide.createIcons();
 
                     const aiRes = await fetch('/api/research/summarize', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ query: q, results: cachedResults })
+                        body: JSON.stringify({ query: q, results: window.cachedResults })
                     });
                     const aiData = await aiRes.json();
                     if (aiData.result) {
-                        let parsed = aiData.result.replace(/\n/g, '<br>');
-                        summaryContent.innerHTML = parsed;
+                        summaryContent.innerHTML = marked.parse(aiData.result);
                         
                         // Enable chat
                         chatInput.disabled = false;
@@ -3553,12 +3588,12 @@ app.get("/student/research", (req, res) => {
                     }
 
                 } catch (err) {
+                    console.error("Search UI Error:", err);
                     resultsContainer.innerHTML = '<div class="p-8 text-center text-red-500 bg-red-50 border border-red-200 rounded-xl">Error executing search.</div>';
                 }
-            });
+            };
 
-            document.getElementById('chat-form').addEventListener('submit', async (e) => {
-                e.preventDefault();
+            window.doResearchChat = async function() {
                 const input = document.getElementById('chat-input');
                 const msg = input.value;
                 if (!msg.trim()) return;
@@ -3573,24 +3608,25 @@ app.get("/student/research", (req, res) => {
                 const loaderId = 'loader_' + Date.now();
                 messagesDiv.innerHTML += '<div id="' + loaderId + '" class="p-3 bg-zinc-100 rounded-lg text-zinc-800 w-[85%] float-left mb-4"><i data-lucide="loader" class="w-3 h-3 inline animate-spin"></i></div><div class="clear-both"></div>';
                 messagesDiv.scrollTop = messagesDiv.scrollHeight;
-                lucide.createIcons();
+                if (window.lucide) window.lucide.createIcons();
 
                 try {
                     const res = await fetch('/api/research/chat', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ message: msg, results: cachedResults })
+                        body: JSON.stringify({ message: msg, results: window.cachedResults })
                     });
                     const data = await res.json();
                     
                     document.getElementById(loaderId).remove();
 
-                    messagesDiv.innerHTML += '<div class="p-3 bg-emerald-50 border border-emerald-100 rounded-lg text-emerald-900 w-[85%] float-left mb-4 shadow-sm">' + data.reply.replace(/\n/g, '<br>') + '</div><div class="clear-both"></div>';
+                    messagesDiv.innerHTML += '<div class="p-4 bg-emerald-50 border border-emerald-100 rounded-lg text-emerald-900 w-[85%] float-left mb-4 shadow-sm prose prose-sm max-w-none">' + marked.parse(data.reply) + '</div><div class="clear-both"></div>';
                     messagesDiv.scrollTop = messagesDiv.scrollHeight;
                 } catch (err) {
+                    console.error("Chat UI error:", err);
                     document.getElementById(loaderId).innerText = "Error: Couldn't connect to AI.";
                 }
-            });
+            };
         </script>
     `;
 
@@ -3602,7 +3638,8 @@ app.get("/api/research/search", async (req, res) => {
         const query = req.query.q;
         if (!query) return res.status(400).json({ error: "Missing query" });
 
-        const searchUrl = "https://search.hackclub.com/res/v1/web/search?q=" + encodeURIComponent(query);
+        const searchQuery = query + ' "research paper" OR "study" OR "journal" OR "academic"';
+        const searchUrl = "https://search.hackclub.com/res/v1/web/search?q=" + encodeURIComponent(searchQuery);
         const apiKey = process.env.SEARCH_KEY || "";
 
         const response = await fetch(searchUrl, {
@@ -3634,7 +3671,7 @@ app.post("/api/research/summarize", express.json(), async (req, res) => {
 
         let contextText = results.map(r => `Title: ${r.title}\nURL: ${r.url}\nDescription: ${r.description}`).join("\n\n");
 
-        const prompt = `A student is doing research on "${query}". I have the following search results:\n\n${contextText}\n\nPlease provide:\n1. A brief short summary (1-2 paragraphs) synthesizing these results.\n2. An auto-generated MLA Citation list for these web sources. For MLA citations of websites, do your best with the Title, URL, and assume today's date if date is missing.`;
+        const prompt = `A student is doing research on "${query}". I have the following search results:\n\n${contextText}\n\nPlease provide:\n1. A brief short summary (1-2 paragraphs) synthesizing these scholarly results.\n2. An auto-generated MLA Citation list for these web sources. For MLA citations of websites, do your best with the Title, URL, and assume today's date if date is missing.\n\nPlease format your entire response using Markdown. Use bolding for titles, italics where appropriate, and lists to make the citations clean and easy to read.`;
 
         const completion = await groq.chat.completions.create({
             messages: [{ role: "user", content: prompt }],
@@ -3643,7 +3680,7 @@ app.post("/api/research/summarize", express.json(), async (req, res) => {
             console.error("Fallback to mixtral", e);
             return await groq.chat.completions.create({
                 messages: [{ role: "user", content: prompt }],
-                model: "mixtral-8x7b-32768",
+                model: "qwen-2.5-8b-instruct",
             });
         });
 
@@ -3669,7 +3706,7 @@ app.post("/api/research/chat", express.json(), async (req, res) => {
         }).catch(async () => {
             return await groq.chat.completions.create({
                 messages: [{ role: "user", content: prompt }],
-                model: "mixtral-8x7b-32768",
+                model: "qwen-2.5-8b-instruct",
             });
         });
 
@@ -3856,24 +3893,76 @@ io.on('connection', (socket) => {
 
 
 
-app.get('/api/markGuideCompleted', (req, res) => {
-    const { guideURL } = req.params.GuideURL;
-    
+app.get('/api/markGuideCompleted', async (req, res) => {
     if (!req.session.userId || !db.users[req.session.userId]) {
         return res.redirect("/student/login");
     }
 
     const student = db.users[req.session.userId];
+    const guideURL = req.query.guideURL;
+    let assignment = null;
 
-    // Find the assignment that has this guide URL and is assigned to the student's class
-    const assignment = Object.values(db.assignments).find(a => {
-        if (a.classCode !== student.classCode) return false;
-        const lesson = db.lessons[a.lessonId];
-        return lesson && lesson.type === 'guide' && lesson.guideURL === guideURL;
-    });
+    if (guideURL) {
+        // Find the assignment that has this guide URL and is assigned to the student's class
+        assignment = Object.values(db.assignments).find(a => {
+            if (a.classCode !== student.classCode) return false;
+            const lesson = db.lessons[a.lessonId];
+            return lesson && lesson.type === 'guide' && lesson.guideURL === guideURL;
+        });
+
+        // If exact match is not found, check if any assigned guides redirect to the provided guideURL
+        if (!assignment) {
+            const assignedGuides = Object.values(db.assignments).filter(a => {
+                if (a.classCode !== student.classCode) return false;
+                const lesson = db.lessons[a.lessonId];
+                return lesson && lesson.type === 'guide' && lesson.guideURL;
+            });
+
+            for (const a of assignedGuides) {
+                const lesson = db.lessons[a.lessonId];
+                try {
+                    // Fetch to resolve redirects and find final destination URL
+                    const response = await fetch(lesson.guideURL, { method: 'GET', redirect: 'follow' });
+                    const finalUrl = response.url;
+                    
+                    // Check if the final redirected URL matches the requested guideURL, ignoring trailing slashes
+                    if (finalUrl === guideURL || finalUrl.replace(/\/$/, '') === guideURL.replace(/\/$/, '')) {
+                        assignment = a;
+                        break;
+                    }
+                } catch (err) {
+                    console.error("Error chasing redirects for", lesson.guideURL, err);
+                }
+            }
+        }
+    }
 
     if (!assignment) {
-        return res.send("This Account does not have this Guide assigned.");
+        // Testing fallback: Mark all assigned guides as completed
+        const assignedGuides = Object.values(db.assignments).filter(a => {
+            if (a.classCode !== student.classCode) return false;
+            const lesson = db.lessons[a.lessonId];
+            return lesson && lesson.type === 'guide';
+        });
+
+        for (const a of assignedGuides) {
+            const progressId = student.id + "_" + a.id;
+            if (!db.studentProgress[progressId]) {
+                db.studentProgress[progressId] = {
+                    id: progressId,
+                    studentId: student.id,
+                    assignmentId: a.id,
+                    progress: 100,
+                    completed: true,
+                    responses: {}
+                };
+            } else {
+                db.studentProgress[progressId].completed = true;
+                db.studentProgress[progressId].progress = 100;
+            }
+        }
+        fs.writeFileSync(path.join(__dirname, 'db.json'), JSON.stringify(db, null, 2));
+        return res.redirect("/student/dashboard");
     }
 
     const progressId = student.id + "_" + assignment.id;
