@@ -23,7 +23,13 @@
             zinc: {
               950: '#09090b',
             },
-            accent: '#E67E22'
+            accent: '#E67E22',
+            brand: {
+              50: '#f5f3ff',
+              100: '#ede9fe',
+              500: '#8b5cf6',
+              600: '#5A51E1',
+            }
           }
         }
       }
@@ -49,7 +55,6 @@
     .custom-scroll::-webkit-scrollbar-thumb { background: #e4e4e7; border-radius: 10px; }
     
     .app-border { border: 1px solid #e4e4e7; }
-    .sidebar-bg { background-color: #f9f9f9; }
     
     .tab-active {
       color: #18181b;
@@ -58,39 +63,38 @@
       border: 1px solid #e4e4e7;
     }
 
-    .spotlight-area {
-      position: relative;
-      z-index: 10;
-      background: white;
-      box-shadow: 0 0 0 8px white, 0 0 0 9999px rgba(9, 9, 11, 0.85);
-      border-radius: 4px;
+    .glass-nav {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
     }
   </style>
 </head>
-<body class="selection:bg-zinc-200">
+<body class="selection:bg-brand-100 selection:text-brand-600">
 
-  <nav class="fixed top-0 w-full z-50 bg-white/70 backdrop-blur-md border-b border-zinc-100">
+  <nav class="fixed top-0 w-full z-50 glass-nav border-b border-zinc-100">
     <div class="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
       <div class="flex items-center gap-2">
-        <div class="w-5 h-5 bg-zinc-950 flex items-center justify-center rounded-[3px]">
+        <div class="w-5 h-5 bg-zinc-950 flex items-center justify-center rounded-[4px]">
           <div class="w-1.5 h-1.5 bg-white rounded-full"></div>
         </div>
-        <span class="font-medium text-sm tracking-tight">ClassLoop</span>
+        <span class="font-semibold text-[15px] tracking-tight text-zinc-900">ClassLoop</span>
       </div>
-      <div class="hidden md:flex items-center gap-6 text-[13px] font-medium text-zinc-500">
+      <div class="hidden md:flex items-center gap-8 text-[13px] font-medium text-zinc-500">
         <a href="#" class="hover:text-zinc-950 transition-colors">Manifesto</a>
-        <a href="#" class="hover:text-zinc-950 transition-colors">OS Features</a>
+        <a href="#" class="hover:text-zinc-950 transition-colors">Platform</a>
         <a href="#" class="hover:text-zinc-950 transition-colors">Changelog</a>
       </div>
-      <button class="bg-zinc-950 text-white px-3.5 py-1.5 rounded-md text-[13px] font-medium hover:bg-zinc-800 transition-all">
-        Access Platform
-      </button>
+      <div class="flex items-center gap-3">
+        <a href="/student/login" class="text-zinc-600 hover:text-zinc-900 px-3 py-1.5 rounded-md text-[13px] font-medium transition-all">Student login</a>
+        <a href="/teacher/login" class="bg-zinc-950 text-white px-4 py-1.5 rounded-md text-[13px] font-medium hover:bg-zinc-800 transition-all shadow-sm">Teacher login</a>
+      </div>
     </div>
   </nav>
 
   <header class="pt-32 pb-12 px-6">
-    <div class="max-w-3xl mx-auto text-center">
-      <h1 class="text-4xl md:text-5xl font-semibold tracking-tighter text-zinc-950 mb-4 animate-in">
+    <div class="max-w-4xl mx-auto text-center">
+      <h1 class="text-4xl md:text-[52px] font-semibold tracking-tighter text-zinc-950 mb-5 animate-in leading-[1.1]">
         The OS for the shared classroom.
       </h1>
       <p class="text-[17px] text-zinc-500 max-w-xl mx-auto animate-in delay-1 font-normal leading-relaxed">
@@ -100,303 +104,728 @@
   </header>
 
   <section class="pb-24 px-6">
-    <div class="max-w-[1100px] mx-auto">
+    <div class="max-w-[1200px] mx-auto">
       
+      <!-- Interactive Tabs -->
       <div class="flex justify-center mb-8 animate-in delay-2 sticky top-20 z-40">
-        <div class="bg-zinc-100/80 backdrop-blur-md p-1 rounded-lg inline-flex border border-zinc-200 shadow-sm">
-          <button data-target="teacher-view" class="tab-btn active tab-active px-5 py-1.5 rounded-md text-[13px] font-medium transition-all flex items-center gap-2">
-            Teacher
+        <div class="bg-zinc-100/80 backdrop-blur-md p-1.5 rounded-lg inline-flex border border-zinc-200 shadow-sm gap-1 flex-wrap justify-center">
+          <button data-target="student-view" class="tab-btn active tab-active px-4 py-1.5 rounded-md text-[13px] font-medium transition-all flex items-center gap-2">
+            Student Workspace
           </button>
-          <button data-target="student-view" class="tab-btn px-5 py-1.5 rounded-md text-[13px] font-medium text-zinc-500 hover:text-zinc-900 transition-all flex items-center gap-2">
-            Student
+          <button data-target="guide-view" class="tab-btn px-4 py-1.5 rounded-md text-[13px] font-medium text-zinc-500 hover:text-zinc-900 transition-all flex items-center gap-2">
+            Interactive Guide
           </button>
-          <button data-target="guided-view" class="tab-btn px-5 py-1.5 rounded-md text-[13px] font-medium text-zinc-500 hover:text-zinc-900 transition-all flex items-center gap-2">
+          <button data-target="lesson-view" class="tab-btn px-4 py-1.5 rounded-md text-[13px] font-medium text-zinc-500 hover:text-zinc-900 transition-all flex items-center gap-2">
             Guided Lesson
+          </button>
+          <button data-target="teacher-view" class="tab-btn px-4 py-1.5 rounded-md text-[13px] font-medium text-zinc-500 hover:text-zinc-900 transition-all flex items-center gap-2">
+            Teacher Dashboard
           </button>
         </div>
       </div>
 
-      <div class="bg-white rounded-xl app-border shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden min-h-[700px] flex flex-col relative animate-in delay-2">
+      <!-- Main App Window -->
+      <div class="bg-white rounded-xl app-border shadow-[0_8px_40px_rgb(0,0,0,0.06)] overflow-hidden h-[750px] flex flex-col relative animate-in delay-2">
         
-        <div class="h-10 border-b border-zinc-100 flex items-center px-4 gap-1.5 bg-zinc-50/50">
-          <div class="w-2.5 h-2.5 rounded-full bg-zinc-200"></div>
-          <div class="w-2.5 h-2.5 rounded-full bg-zinc-200"></div>
-          <div class="w-2.5 h-2.5 rounded-full bg-zinc-200"></div>
-          <div class="mx-auto flex items-center gap-1.5 text-[10px] font-medium text-zinc-400 bg-white border border-zinc-200 px-3 py-0.5 rounded shadow-sm">
-            <i data-lucide="lock" class="w-2.5 h-2.5"></i> classloop.xyz
+        <!-- Browser Chrome -->
+        <div class="h-10 border-b border-zinc-100 flex items-center px-4 gap-2 bg-[#fcfcfc] shrink-0">
+          <div class="flex gap-1.5">
+            <div class="w-3 h-3 rounded-full bg-[#ff5f56] border border-[#e0443e]"></div>
+            <div class="w-3 h-3 rounded-full bg-[#ffbd2e] border border-[#dea123]"></div>
+            <div class="w-3 h-3 rounded-full bg-[#27c93f] border border-[#1aab29]"></div>
           </div>
+          <div class="mx-auto flex items-center gap-2 text-[11px] font-medium text-zinc-500 bg-white border border-zinc-200 px-4 py-1 rounded-md shadow-sm w-64 justify-center">
+            <i data-lucide="lock" class="w-3 h-3"></i> app.classloop.xyz
+          </div>
+          <div class="w-[52px]"></div> <!-- Spacer for centering -->
         </div>
 
-        <div id="teacher-view" class="view-panel flex-1 flex flex-col md:flex-row h-full">
-          <div class="w-full md:w-56 sidebar-bg border-r border-zinc-100 p-5 flex flex-col">
-            <div class="mb-8">
-              <div class="text-[11px] font-bold text-zinc-400 uppercase tracking-widest mb-4">Command Center</div>
-              <nav class="space-y-1">
-                <a href="#" class="flex items-center gap-2.5 px-2 py-1.5 text-[13px] font-medium bg-white app-border rounded-md shadow-sm"><i data-lucide="layout" class="w-4 h-4 text-zinc-400"></i> Radar</a>
-                <a href="#" class="flex items-center gap-2.5 px-2 py-1.5 text-[13px] font-medium text-zinc-500 hover:text-zinc-900"><i data-lucide="calendar" class="w-4 h-4"></i> Bridge</a>
-                <a href="#" class="flex items-center gap-2.5 px-2 py-1.5 text-[13px] font-medium text-zinc-500 hover:text-zinc-900"><i data-lucide="zap" class="w-4 h-4"></i> Assists</a>
-              </nav>
+        <!-- 1. STUDENT VIEW -->
+        <div id="student-view" class="view-panel flex-1 flex flex-col h-full bg-[#fafafa]">
+          <!-- Top Nav -->
+          <div class="h-16 bg-white border-b border-zinc-100 flex items-center justify-between px-8 shrink-0">
+            <div class="flex items-center gap-2">
+              <div class="w-5 h-5 bg-zinc-950 flex items-center justify-center rounded-[4px]">
+                <div class="w-1.5 h-1.5 bg-white rounded-full"></div>
+              </div>
+              <span class="font-semibold text-[15px] tracking-tight text-zinc-900">ClassLoop</span>
             </div>
-            <div class="mt-auto p-3 bg-zinc-950 rounded-lg">
-              <div class="text-[10px] font-bold text-zinc-500 uppercase mb-2">Sync Status</div>
-              <div class="flex items-center gap-2 text-white text-[11px] font-medium">
-                <div class="w-1.5 h-1.5 bg-emerald-500 rounded-full"></div> Canvas Connected
+            <div class="flex items-center gap-4">
+              <div class="text-right">
+                <div class="text-[13px] font-semibold text-zinc-900">Jeremiah Joseph</div>
+                <div class="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Student</div>
+              </div>
+              <img src="https://images.unsplash.com/photo-1599566150163-29194dcaad36?auto=format&fit=crop&q=80&w=100" class="w-8 h-8 rounded-full border border-zinc-200 object-cover" alt="Student">
+              <button class="text-[13px] font-medium text-zinc-500 hover:text-zinc-900 ml-2">Sign Out</button>
+            </div>
+          </div>
+          
+          <!-- Student Content -->
+          <div class="flex-1 p-8 overflow-y-auto custom-scroll flex justify-center">
+            <div class="w-full max-w-5xl">
+              <!-- Header -->
+              <div class="flex justify-between items-center mb-10">
+                <h1 class="text-[28px] font-bold text-zinc-900 tracking-tight">Student Workspace</h1>
+                <div class="flex items-center gap-2 px-3 py-1.5 bg-white border border-zinc-200 rounded-lg shadow-sm">
+                  <i data-lucide="monitor" class="w-4 h-4 text-zinc-400"></i>
+                  <span class="text-[13px] font-medium text-zinc-600">Class: Vivaan S</span>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <!-- Left Column -->
+                <div class="md:col-span-2 space-y-8">
+                  
+                  <!-- Current Tasks -->
+                  <section>
+                    <h3 class="text-[11px] font-bold text-zinc-400 uppercase tracking-[0.1em] mb-3 ml-1">Current Tasks & Lessons</h3>
+                    <div class="bg-white border border-zinc-200 rounded-xl p-5 shadow-sm transition-shadow hover:shadow-md">
+                      <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-4">
+                          <div class="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center border border-blue-100">
+                            <i data-lucide="compass" class="w-5 h-5 text-blue-500"></i>
+                          </div>
+                          <div>
+                            <div class="flex items-center gap-2 mb-1">
+                              <h4 class="text-[15px] font-bold text-zinc-900">How to access your math assignments</h4>
+                              <span class="px-2 py-0.5 bg-blue-50 text-blue-600 text-[9px] font-bold uppercase rounded tracking-wider">Guide</span>
+                            </div>
+                            <p class="text-[12px] text-zinc-500 font-medium">Due: 3/27/2026 • Progress: 0%</p>
+                          </div>
+                        </div>
+                        <button class="px-4 py-2 border border-zinc-200 text-zinc-700 text-[13px] font-medium rounded-lg hover:bg-zinc-50 transition-colors shadow-sm">
+                          Open Link
+                        </button>
+                      </div>
+                    </div>
+                  </section>
+
+                  <!-- Completed Lessons -->
+                  <section>
+                    <h3 class="text-[11px] font-bold text-zinc-400 uppercase tracking-[0.1em] mb-3 ml-1">Completed Lessons</h3>
+                    <div class="bg-white border border-zinc-200 rounded-xl p-12 text-center shadow-sm">
+                      <p class="text-[13px] text-zinc-500 font-medium">No completed lessons yet.</p>
+                    </div>
+                  </section>
+
+                </div>
+
+                <!-- Right Column -->
+                <div class="md:col-span-1">
+                  <div class="bg-[#f5f6ff] border border-[#e4e6fb] rounded-xl p-8 text-center flex flex-col items-center">
+                    <div class="w-14 h-14 rounded-full bg-white flex items-center justify-center shadow-sm mb-5 text-[#5A51E1]">
+                      <i data-lucide="life-buoy" class="w-7 h-7"></i>
+                    </div>
+                    <h3 class="text-[18px] font-bold text-[#1a1c29] mb-3 tracking-tight">Need Teacher Help?</h3>
+                    <p class="text-[13px] text-[#555870] leading-relaxed mb-6">
+                      Don't stay blocked. Access AI tools, peer networks, and your teacher to overcome roadblocks.
+                    </p>
+                    <button class="w-full py-2.5 bg-[#5A51E1] text-white text-[13px] font-semibold rounded-lg hover:bg-[#4b43c6] transition-colors shadow-sm">
+                      Contact Teacher
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
+        </div>
 
-          <div class="flex-1 p-8 overflow-y-auto custom-scroll">
-            <div class="grid grid-cols-12 gap-6">
+        <!-- 2. INTERACTIVE GUIDE VIEW (GitHub Clone) -->
+        <div id="guide-view" class="view-panel hidden flex-1 flex h-full overflow-hidden">
+          
+          <!-- External Site (GitHub clone) -->
+          <div class="flex-1 bg-[#0d1117] flex flex-col relative border-r border-zinc-200 overflow-y-auto custom-scroll">
+            <!-- Mock Header -->
+            <div class="h-14 bg-[#161b22] border-b border-[#30363d] flex items-center justify-between px-6 shrink-0 z-10 sticky top-0">
+              <div class="flex items-center gap-4 text-[#c9d1d9]">
+                <i data-lucide="github" class="w-6 h-6 text-white"></i>
+                <span class="text-[14px] font-semibold">VivaanCode</span>
+              </div>
+              <div class="flex items-center gap-3">
+                <div class="bg-[#0d1117] border border-[#30363d] rounded-md px-3 py-1.5 flex items-center gap-2 text-[#8b949e] w-64">
+                  <i data-lucide="search" class="w-3.5 h-3.5"></i>
+                  <span class="text-[12px]">Type <span class="border border-[#30363d] rounded px-1 ml-0.5 mr-0.5">/</span> to search</span>
+                </div>
+                <div class="w-7 h-7 rounded-full bg-[#30363d] overflow-hidden">
+                   <img src="https://images.unsplash.com/photo-1599566150163-29194dcaad36?auto=format&fit=crop&q=80&w=100" class="w-full h-full object-cover grayscale">
+                </div>
+              </div>
+            </div>
+
+            <!-- Warning Banner -->
+            <div class="bg-[#1f2428] border-b border-[#30363d] p-3 flex items-center gap-2 text-[#8b949e] text-[12px]">
+              <i data-lucide="info" class="w-4 h-4 text-blue-400"></i>
+              On April 24 we'll start using GitHub Copilot interaction data for AI model training unless you opt out. <a href="#" class="text-blue-400 hover:underline">Review this update</a>
+            </div>
+
+            <!-- Profile Nav (with focus element) -->
+            <div class="flex items-center gap-6 px-8 mt-6 border-b border-[#30363d] z-10 sticky top-14 bg-[#0d1117]">
+              <div class="pb-3 text-[#8b949e] text-[13px] flex items-center gap-2 cursor-pointer hover:text-[#c9d1d9]"><i data-lucide="book-open" class="w-4 h-4"></i> Overview</div>
               
-              <div class="col-span-12 lg:col-span-8 space-y-8">
-                <div>
-                  <h3 class="text-[13px] font-bold text-zinc-400 uppercase tracking-widest mb-4">The Curriculum Bridge</h3>
-                  <div class="p-6 bg-white app-border rounded-xl">
-                    <div class="flex items-start justify-between mb-6">
-                      <div>
-                        <div class="text-sm font-semibold text-zinc-900">High-Stress Zone Detected</div>
-                        <p class="text-[13px] text-zinc-500 mt-1">Cohort 8A has 3 overlapping assessments.</p>
-                      </div>
-                      <div class="px-2 py-1 bg-red-50 text-red-700 text-[10px] font-bold rounded border border-red-100">Conflict: Oct 14</div>
+              <!-- Spotlight Area for the Guide -->
+              <div class="relative z-20">
+                <div class="absolute -inset-2 border-[3px] border-orange-400 rounded-lg animate-pulse z-0 bg-[#0d1117]"></div>
+                <div class="pb-3 text-[#c9d1d9] text-[13px] font-semibold flex items-center gap-2 relative z-10 border-b-2 border-[#f78166] pt-1">
+                  <i data-lucide="folder-git-2" class="w-4 h-4"></i> Repositories
+                  <span class="bg-[#30363d] text-[#c9d1d9] text-[11px] px-1.5 py-0.5 rounded-full font-medium">18</span>
+                </div>
+              </div>
+              
+              <div class="pb-3 text-[#8b949e] text-[13px] flex items-center gap-2 cursor-pointer hover:text-[#c9d1d9]"><i data-lucide="layout" class="w-4 h-4"></i> Projects</div>
+              <div class="pb-3 text-[#8b949e] text-[13px] flex items-center gap-2 cursor-pointer hover:text-[#c9d1d9]"><i data-lucide="package" class="w-4 h-4"></i> Packages</div>
+              <div class="pb-3 text-[#8b949e] text-[13px] flex items-center gap-2 cursor-pointer hover:text-[#c9d1d9]"><i data-lucide="star" class="w-4 h-4"></i> Stars <span class="bg-[#30363d] px-1.5 py-0.5 rounded-full text-[11px]">3</span></div>
+            </div>
+
+            <!-- Profile Content -->
+            <div class="flex-1 p-8 flex flex-col md:flex-row gap-8 relative z-0">
+              <div class="w-64 shrink-0">
+                <div class="w-64 h-64 bg-[#161b22] rounded-full border border-[#30363d] flex items-center justify-center text-[#c9d1d9] text-[80px] font-bold mb-4 overflow-hidden relative shadow-lg">
+                  <span class="opacity-50 tracking-tighter">V\S</span>
+                </div>
+                <h2 class="text-2xl font-bold text-[#c9d1d9]">Vivaan</h2>
+                <div class="text-[16px] text-[#8b949e] mb-4">VivaanCode • he/him</div>
+                <button class="w-full py-1.5 bg-[#21262d] border border-[#30363d] text-[#c9d1d9] rounded-md text-[13px] font-medium mb-4 hover:bg-[#30363d] transition-colors">Follow</button>
+                <div class="text-[14px] text-[#c9d1d9] mb-4">yay</div>
+                <div class="text-[13px] text-[#8b949e] flex items-center gap-1.5 mb-2">
+                  <i data-lucide="users" class="w-3.5 h-3.5"></i> <strong class="text-[#c9d1d9]">0</strong> followers • <strong class="text-[#c9d1d9]">1</strong> following
+                </div>
+                <div class="text-[13px] text-[#8b949e] flex items-center gap-1.5 mb-1">
+                  <i data-lucide="clock" class="w-3.5 h-3.5"></i> 17:23 - same time
+                </div>
+                <div class="text-[13px] text-[#8b949e] flex items-center gap-1.5 mb-6">
+                  <i data-lucide="link" class="w-3.5 h-3.5"></i> <a href="#" class="text-[#c9d1d9] hover:underline hover:text-blue-400">vivaan.dev</a>
+                </div>
+              </div>
+
+              <div class="flex-1 space-y-6">
+                <!-- README -->
+                <div class="text-[#8b949e] text-[12px] mb-2 font-medium">VivaanCode / README.md</div>
+                <h3 class="text-[20px] font-bold text-[#c9d1d9] mb-2">Hey 👋 I'm Vivaan</h3>
+                <h4 class="text-[24px] font-bold text-[#1f6feb] mb-6 tracking-tight">Fullstack developer</h4>
+                
+                <!-- Hackatime Stats -->
+                <div class="border border-[#30363d] rounded-xl p-6 bg-[#0d1117] shadow-sm">
+                  <h4 class="text-[15px] font-semibold text-[#c9d1d9] mb-5 tracking-wide text-red-400/80">Hackatime Stats</h4>
+                  <div class="flex h-2.5 rounded-full overflow-hidden mb-5 bg-[#30363d]">
+                    <div class="bg-blue-500 w-[45%]"></div>
+                    <div class="bg-yellow-400 w-[25%]"></div>
+                    <div class="bg-red-500 w-[15%]"></div>
+                    <div class="bg-purple-500 w-[10%]"></div>
+                    <div class="bg-zinc-500 w-[5%]"></div>
+                  </div>
+                  <div class="grid grid-cols-2 gap-y-3 text-[12px] text-[#8b949e]">
+                    <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span> Python - 26h 34m</div>
+                    <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-yellow-400"></span> JavaScript - 13h 13m</div>
+                    <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-red-500"></span> HTML - 13h 9m</div>
+                    <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-purple-500"></span> CSS - 3h 54m</div>
+                    <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-orange-400"></span> Java - 9h 18m</div>
+                    <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-full bg-zinc-500"></span> Other - 4h 29m</div>
+                  </div>
+                </div>
+
+                <div class="text-[14px] text-[#c9d1d9] mt-8 mb-4 font-medium">Pinned</div>
+                <!-- Pinned Repos -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                   <!-- Repo 1 -->
+                   <div class="border border-[#30363d] rounded-xl p-4 bg-[#0d1117] flex flex-col hover:border-[#8b949e] transition-colors cursor-pointer">
+                     <div class="flex items-center gap-2 mb-2">
+                        <i data-lucide="book-marked" class="w-4 h-4 text-[#8b949e]"></i>
+                        <span class="text-[14px] font-semibold text-blue-400 hover:underline">Urlshort</span>
+                        <span class="px-2 py-0.5 border border-[#30363d] rounded-full text-[10px] text-[#8b949e]">Public</span>
+                     </div>
+                     <p class="text-[12px] text-[#8b949e] mb-4 flex-1">One of the first projects I've made. A simple Flask URL shortener.</p>
+                     <div class="flex items-center gap-2 text-[12px] text-[#8b949e]">
+                       <span class="w-3 h-3 rounded-full bg-blue-500"></span> Python
+                     </div>
+                   </div>
+                   <!-- Repo 2 -->
+                   <div class="border border-[#30363d] rounded-xl p-4 bg-[#0d1117] flex flex-col hover:border-[#8b949e] transition-colors cursor-pointer">
+                     <div class="flex items-center gap-2 mb-2">
+                        <i data-lucide="book-marked" class="w-4 h-4 text-[#8b949e]"></i>
+                        <span class="text-[14px] font-semibold text-blue-400 hover:underline">AmongIRL</span>
+                        <span class="px-2 py-0.5 border border-[#30363d] rounded-full text-[10px] text-[#8b949e]">Public</span>
+                     </div>
+                     <p class="text-[12px] text-[#8b949e] mb-4 flex-1">Among Us, but in real life</p>
+                     <div class="flex items-center gap-2 text-[12px] text-[#8b949e]">
+                       <span class="w-3 h-3 rounded-full bg-red-500"></span> HTML
+                     </div>
+                   </div>
+                   <!-- Repo 3 -->
+                   <div class="border border-[#30363d] rounded-xl p-4 bg-[#0d1117] flex flex-col hover:border-[#8b949e] transition-colors cursor-pointer">
+                     <div class="flex items-center gap-2 mb-2">
+                        <i data-lucide="book-marked" class="w-4 h-4 text-[#8b949e]"></i>
+                        <span class="text-[14px] font-semibold text-blue-400 hover:underline">ftcposeidon-decode-2026</span>
+                        <span class="px-2 py-0.5 border border-[#30363d] rounded-full text-[10px] text-[#8b949e]">Public</span>
+                     </div>
+                     <p class="text-[12px] text-[#8b949e] mb-4 flex-1">Poseidon's roadrunner code for comp #2! Most code is copied from...</p>
+                     <div class="flex items-center gap-2 text-[12px] text-[#8b949e]">
+                       <span class="w-3 h-3 rounded-full bg-orange-400"></span> Java
+                     </div>
+                   </div>
+                   <!-- Repo 4 -->
+                   <div class="border border-[#30363d] rounded-xl p-4 bg-[#0d1117] flex flex-col hover:border-[#8b949e] transition-colors cursor-pointer">
+                     <div class="flex items-center gap-2 mb-2">
+                        <i data-lucide="book-marked" class="w-4 h-4 text-[#8b949e]"></i>
+                        <span class="text-[14px] font-semibold text-blue-400 hover:underline">stockfinalboss</span>
+                        <span class="px-2 py-0.5 border border-[#30363d] rounded-full text-[10px] text-[#8b949e]">Public</span>
+                     </div>
+                     <p class="text-[12px] text-[#8b949e] mb-4 flex-1">Made for the EVHS InspiritAI Workshop.</p>
+                     <div class="flex items-center gap-2 text-[12px] text-[#8b949e]">
+                       <span class="w-3 h-3 rounded-full bg-blue-500"></span> Python
+                     </div>
+                   </div>
+                </div>
+
+              </div>
+            </div>
+            
+            <!-- Overlay to darken rest of the screen behind the spotlight -->
+            <div class="absolute inset-0 bg-[#0d1117]/60 pointer-events-none z-0"></div>
+          </div>
+
+          <!-- Guide Sidebar -->
+          <div class="w-80 bg-white flex flex-col shrink-0 shadow-[-10px_0_20px_rgba(0,0,0,0.05)] z-20">
+            <div class="p-6 flex-1 overflow-y-auto">
+              <div class="text-[10px] font-bold text-accent uppercase tracking-widest mb-2">Student Guide</div>
+              <h2 class="text-[20px] font-bold text-zinc-900 mb-1">Click Repositories</h2>
+              <p class="text-[12px] text-zinc-400 font-medium mb-8">Step 1 of 3</p>
+
+              <div class="text-[14px] text-zinc-700 leading-relaxed mb-8">
+                Find and click the link 'Repositories (18)' to view all repositories.
+              </div>
+
+              <div class="bg-[#f8f9fa] border border-[#e9ecef] rounded-xl p-4">
+                <p class="text-[12px] text-zinc-500 leading-relaxed">
+                  <span class="font-semibold text-zinc-700">Teacher tip:</span> This step helps students locate the correct area to fork assignments.
+                </p>
+              </div>
+            </div>
+
+            <div class="p-5 border-t border-zinc-100 flex items-center justify-between bg-white gap-3">
+              <button class="flex-1 py-2 bg-white border border-zinc-200 rounded-lg text-[13px] font-semibold text-zinc-700 hover:bg-zinc-50 transition-colors">
+                Back
+              </button>
+              <button class="flex-1 py-2 bg-zinc-950 text-white rounded-lg text-[13px] font-semibold hover:bg-zinc-800 transition-colors shadow-sm">
+                Next
+              </button>
+              <button class="flex-1 py-2 bg-white border border-zinc-200 rounded-lg text-[13px] font-semibold text-zinc-700 hover:bg-zinc-50 transition-colors">
+                Exit
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. GUIDED LESSON VIEW (IXL Clone) -->
+        <div id="lesson-view" class="view-panel hidden flex-1 flex h-full overflow-hidden">
+            <!-- IXL Content Area -->
+            <div class="flex-1 bg-gradient-to-b from-[#8ed6ea] to-[#d6f2fa] flex flex-col relative font-sans overflow-hidden">
+                <!-- IXL Top Promo Banner -->
+                <div class="bg-[#dcf4f9] h-8 text-[#4c4c4c] text-[11px] font-medium flex items-center justify-center relative shrink-0">
+                    California chose the future of core math curriculum—Takeoff by IXL is now officially approved for statewide adoption! <span class="font-bold text-[#009bce] ml-1 cursor-pointer hover:underline">Explore Takeoff ></span>
+                    <i data-lucide="x" class="w-3.5 h-3.5 absolute right-4 text-[#888] cursor-pointer"></i>
+                </div>
+                
+                <!-- IXL Header -->
+                <div class="bg-[#8ec63f] pt-4 px-6 shrink-0 z-10">
+                    <div class="flex items-center gap-6 w-full mb-3">
+                        <div class="bg-white px-2 py-0.5 rounded flex items-baseline">
+                            <span class="text-[#00a9d8] text-3xl font-black tracking-tighter">I</span>
+                            <span class="text-[#8ec63f] text-3xl font-black tracking-tighter">X</span>
+                            <span class="text-[#f68f1e] text-3xl font-black tracking-tighter">L</span>
+                        </div>
+                        <div class="flex-1 max-w-[400px] bg-white/20 rounded flex items-center px-3 py-1.5 border border-white/30">
+                            <i data-lucide="search" class="w-4 h-4 text-white mr-2"></i>
+                            <input type="text" placeholder="Search topics, skills, and more" class="bg-transparent text-white placeholder-white/80 w-full text-sm outline-none font-medium">
+                            <i data-lucide="chevron-right" class="w-4 h-4 text-white ml-2"></i>
+                        </div>
+                        <div class="flex items-center gap-2 ml-auto">
+                            <button class="bg-[#009bce] text-white px-5 py-1.5 rounded-full text-sm font-bold flex items-center gap-2 shadow-sm">
+                                <i data-lucide="user" class="w-4 h-4"></i> Sign in
+                            </button>
+                            <button class="bg-[#ffc600] text-[#4c4c4c] px-5 py-1.5 rounded-full text-sm font-bold shadow-sm">Membership</button>
+                        </div>
                     </div>
-                    <div class="space-y-2 mb-6">
-                      <div class="flex items-center justify-between p-2.5 bg-zinc-50 rounded-md text-[12px] border border-zinc-100">
-                        <span class="font-medium">Industrial Rev Essay (History)</span>
-                        <span class="text-zinc-400 text-[10px]">Your Class</span>
-                      </div>
-                      <div class="flex items-center justify-between p-2.5 bg-zinc-50 rounded-md text-[12px] border border-zinc-100">
-                        <span class="font-medium">Force & Motion Test (Physics)</span>
-                        <span class="text-zinc-400 text-[10px]">Mrs. Davis</span>
-                      </div>
+                    
+                    <!-- IXL Nav -->
+                    <div class="flex items-end gap-1 text-white text-[15px] px-2 h-10 border-b border-white/20">
+                        <div class="px-5 py-2 border-b-4 border-[#00a9d8] text-[#00a9d8] font-bold bg-white rounded-t-md relative -bottom-[1px]">Math</div>
+                        <div class="px-5 py-2 hover:bg-white/10 rounded-t-md cursor-pointer">Language arts</div>
+                        <div class="px-5 py-2 hover:bg-white/10 rounded-t-md cursor-pointer">Science</div>
+                        <div class="px-5 py-2 hover:bg-white/10 rounded-t-md cursor-pointer">Social studies</div>
+                        <div class="px-5 py-2 hover:bg-white/10 rounded-t-md cursor-pointer">Spanish</div>
+                        <div class="px-5 py-2 hover:bg-white/10 rounded-t-md cursor-pointer ml-auto text-sm">Recommendations</div>
+                        <div class="px-5 py-2 hover:bg-white/10 rounded-t-md cursor-pointer text-sm">Skill plans</div>
+                        <div class="px-5 py-2 hover:bg-white/10 rounded-t-md cursor-pointer text-sm">Awards</div>
                     </div>
-                    <button class="w-full py-2 bg-zinc-950 text-white text-[12px] font-medium rounded-md hover:bg-zinc-800 transition-colors">
-                      Optimize Team Schedule
+                </div>
+
+                <!-- Breadcrumbs -->
+                <div class="bg-white/70 backdrop-blur-sm h-10 flex items-center justify-between px-6 text-[12px] text-[#4c4c4c] shrink-0 border-b border-[#00a9d8]/10 shadow-sm">
+                    <div class="flex items-center gap-2">
+                        <span class="cursor-pointer hover:underline text-[#009bce]">Kindergarten</span>
+                        <span class="text-[#888]">></span>
+                        <span class="font-bold">A.1</span>
+                        <span>Identify numbers - up to 3</span>
+                        <span class="text-[#888] text-[10px] ml-1">FSH</span>
+                    </div>
+                    <div class="flex items-center gap-1 cursor-pointer text-[#009bce] hover:underline">
+                       <i data-lucide="share" class="w-3.5 h-3.5"></i> Share skill
+                    </div>
+                </div>
+
+                <!-- Main Question Area -->
+                <div class="flex-1 overflow-y-auto p-6 flex justify-center">
+                    <div class="bg-white rounded-xl shadow-md p-8 w-full max-w-4xl border border-white/50 relative mt-4 h-fit min-h-[400px]">
+                        
+                        <!-- Learn Helpers -->
+                        <div class="flex items-center gap-4 justify-center absolute top-[-16px] left-0 right-0">
+                             <div class="bg-white border border-[#e4e4e4] rounded-full px-5 py-1.5 text-[#00a9d8] text-[13px] font-bold shadow-sm flex items-center gap-2 cursor-pointer hover:bg-zinc-50 transition-colors"><i data-lucide="lightbulb" class="w-4 h-4 fill-[#00a9d8]/20"></i> Learn with an example</div>
+                             <span class="text-zinc-400 text-sm">or</span>
+                             <div class="bg-white border border-[#e4e4e4] rounded-full px-5 py-1.5 text-[#00a9d8] text-[13px] font-bold shadow-sm flex items-center gap-2 cursor-pointer hover:bg-zinc-50 transition-colors"><i data-lucide="play-circle" class="w-4 h-4 fill-[#00a9d8]/20"></i> Watch a video</div>
+                        </div>
+
+                        <div class="flex mt-8 gap-8">
+                            <!-- Question Column -->
+                            <div class="flex-1">
+                                <div class="flex items-start gap-4 mb-8">
+                                    <div class="mt-1 bg-[#00a9d8] rounded-full p-1.5 cursor-pointer hover:bg-[#009bce] transition-colors"><i data-lucide="volume-2" class="w-5 h-5 text-white"></i></div>
+                                    <h2 class="text-[22px] font-bold text-[#4c4c4c]">Pick every 2.</h2>
+                                </div>
+                                
+                                <div class="flex gap-4 mb-12 ml-12">
+                                    <!-- Selected Option -->
+                                    <div class="w-[80px] h-[80px] border border-[#d2f1f9] bg-[#e1f5fb] rounded flex items-center justify-center text-[28px] font-bold text-[#4c4c4c] relative cursor-pointer shadow-sm">
+                                        <div class="absolute inset-0 border-4 border-[#00a9d8] rounded"></div>
+                                        <div class="absolute top-1.5 left-1.5 w-5 h-5 bg-[#00a9d8] text-white flex items-center justify-center rounded-sm"><i data-lucide="check" class="w-4 h-4 font-bold"></i></div>
+                                        2
+                                    </div>
+                                    <!-- Selected Option 2 -->
+                                    <div class="w-[80px] h-[80px] border border-[#d2f1f9] bg-[#e1f5fb] rounded flex items-center justify-center text-[28px] font-bold text-[#4c4c4c] relative cursor-pointer shadow-sm">
+                                        <div class="absolute inset-0 border-4 border-[#00a9d8] rounded"></div>
+                                        <div class="absolute top-1.5 left-1.5 w-5 h-5 bg-[#00a9d8] text-white flex items-center justify-center rounded-sm"><i data-lucide="check" class="w-4 h-4 font-bold"></i></div>
+                                        2
+                                    </div>
+                                    <!-- Unselected Option -->
+                                    <div class="w-[80px] h-[80px] border border-[#d2f1f9] bg-[#e1f5fb] rounded flex items-center justify-center text-[28px] font-bold text-[#4c4c4c] relative cursor-pointer shadow-sm">
+                                        <div class="absolute inset-0 border-4 border-[#d2f1f9] rounded"></div>
+                                        <div class="absolute top-1.5 left-1.5 w-5 h-5 bg-[#b2e5f5] text-white flex items-center justify-center rounded-sm"><i data-lucide="check" class="w-4 h-4 font-bold"></i></div>
+                                        1
+                                    </div>
+                                </div>
+
+                                <button class="ml-12 bg-[#8ec63f] hover:bg-[#7ebd34] text-white font-bold py-2.5 px-8 rounded shadow-sm text-[15px] transition-colors">Submit</button>
+                            </div>
+
+                            <!-- Right Stats Sidebar within card -->
+                            <div class="w-32 flex flex-col items-center gap-3 shrink-0">
+                                <div class="bg-[#8ec63f] w-full text-center rounded overflow-hidden shadow-sm">
+                                    <div class="text-white text-[12px] font-bold py-1 bg-[#8ec63f]">Questions<br>answered</div>
+                                    <div class="bg-[#f2f8e8] py-2 text-[#4c4c4c] text-3xl font-bold">0</div>
+                                </div>
+                                <div class="bg-[#00a9d8] w-full text-center rounded overflow-hidden shadow-sm">
+                                    <div class="text-white text-[12px] font-bold py-1 bg-[#00a9d8]">Time<br>elapsed</div>
+                                    <div class="bg-[#e6f7fc] py-2 flex flex-col items-center text-[#4c4c4c]">
+                                        <div class="flex gap-2 text-xl font-bold mb-1">
+                                            <span>00</span><span class="opacity-30 -mx-1">:</span><span>01</span><span class="opacity-30 -mx-1">:</span><span>07</span>
+                                        </div>
+                                        <div class="flex gap-3 text-[8px] font-bold text-[#888] uppercase tracking-wide">
+                                            <span>HR</span><span>MIN</span><span>SEC</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="bg-[#f68f1e] w-full text-center rounded overflow-hidden shadow-sm relative">
+                                    <div class="text-white text-[12px] font-bold py-1 bg-[#f68f1e]">SmartScore<br><span class="font-normal text-[10px]">out of 100</span> <i data-lucide="help-circle" class="w-3 h-3 inline pb-0.5"></i></div>
+                                    <div class="bg-[#fef4e8] py-2 text-[#4c4c4c] text-3xl font-bold">0</div>
+                                </div>
+                                <div class="mt-4 flex items-center gap-1 text-[12px] font-bold text-[#009bce] cursor-pointer hover:underline">
+                                    Teacher tools >
+                                </div>
+                                <div class="mt-auto">
+                                   <div class="w-8 h-8 rounded-full bg-[#00a9d8] flex items-center justify-center rotate-45 text-white shadow-sm mt-8"><i data-lucide="pen" class="w-4 h-4"></i></div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- ClassLoop Lesson Hub Sidebar -->
+            <div class="w-96 bg-white border-l border-zinc-200 flex flex-col z-20 shrink-0 shadow-[-10px_0_20px_rgba(0,0,0,0.05)] h-full">
+                <!-- Header -->
+                <div class="p-4 border-b border-zinc-100 flex items-center justify-between shrink-0">
+                    <div class="text-[10px] font-bold text-accent uppercase tracking-widest flex items-center gap-1.5">
+                        ClassLoop <span class="text-zinc-300">•</span> Lesson Hub
+                    </div>
+                    <div class="flex items-center gap-4 text-[11px] font-semibold text-zinc-500">
+                        <button class="hover:text-zinc-900 transition-colors">Hide ></button>
+                        <button class="hover:text-zinc-900 transition-colors">Close</button>
+                    </div>
+                </div>
+
+                <!-- Scrollable Content -->
+                <div class="flex-1 overflow-y-auto custom-scroll p-5 flex flex-col">
+                    
+                    <!-- Lesson Info -->
+                    <div class="mb-6">
+                       <h2 class="text-[20px] font-bold text-zinc-900 mb-1">Lesson</h2>
+                       <p class="text-[11px] text-zinc-500 leading-tight">Tied to: IXL | Identify numbers - up to 3 | Kindergarten math</p>
+                       <a href="#" class="text-[10px] text-blue-500 hover:underline break-all mt-1 block">https://www.ixl.com/math/kindergarten/identify-numbers-up-to-3</a>
+                    </div>
+
+                    <!-- Resources -->
+                    <div class="mb-6">
+                        <h3 class="text-[11px] font-bold text-zinc-400 uppercase tracking-widest mb-3">Resources</h3>
+                        <div class="space-y-2">
+                            <div class="p-3 border border-zinc-200 rounded-lg hover:border-zinc-300 transition-colors cursor-pointer bg-zinc-50/50 shadow-sm">
+                                <div class="text-[13px] font-bold text-zinc-900 mb-1">Learn with this video!</div>
+                                <div class="text-[10px] text-zinc-400 truncate">https://www.youtube.com/embed/ZJEIKkPXlrg?si=...</div>
+                            </div>
+                            <div class="p-3 border border-zinc-200 rounded-lg hover:border-zinc-300 transition-colors cursor-pointer shadow-sm">
+                                <div class="text-[13px] font-bold text-zinc-900 mb-1">Image of the 10 numbers</div>
+                                <div class="text-[10px] text-zinc-400 truncate">https://encrypted-tbn0.gstatic.com/images?q=...</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Preview -->
+                    <div class="mb-6">
+                        <div class="flex items-center justify-between mb-3">
+                            <h3 class="text-[11px] font-bold text-zinc-400 uppercase tracking-widest">Preview</h3>
+                            <button class="text-[10px] border border-zinc-200 px-2 py-0.5 rounded font-semibold text-zinc-500 hover:bg-zinc-50">Clear</button>
+                        </div>
+                        <p class="text-[11px] text-zinc-500 mb-2">Showing: Learn with this video!</p>
+                        
+                        <!-- Video Mockup -->
+                        <div class="w-full aspect-video bg-zinc-900 rounded-lg overflow-hidden relative shadow-sm border border-zinc-200 flex items-center justify-center">
+                            <!-- Background mock -->
+                            <div class="absolute inset-0 bg-[#009bce] opacity-80"></div>
+                            <img src="https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?auto=format&fit=crop&q=80&w=400" class="absolute inset-0 w-full h-full object-cover mix-blend-overlay">
+                            
+                            <!-- Video UI -->
+                            <div class="absolute inset-0 flex flex-col p-3">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-8 h-8 bg-white rounded-full flex items-center justify-center text-xs font-bold text-green-500 shrink-0">Kids</div>
+                                    <div class="flex-1">
+                                        <div class="text-white text-[13px] font-bold leading-tight">Learn Numbers...</div>
+                                        <div class="text-white/80 text-[10px]">Kids Academy</div>
+                                    </div>
+                                    <div class="flex gap-1">
+                                        <div class="w-6 h-6 bg-black/40 rounded flex items-center justify-center backdrop-blur-sm"><i data-lucide="volume-2" class="w-3.5 h-3.5 text-white"></i></div>
+                                        <div class="w-6 h-6 bg-black/40 rounded flex items-center justify-center backdrop-blur-sm"><i data-lucide="settings" class="w-3.5 h-3.5 text-white"></i></div>
+                                        <div class="w-6 h-6 bg-black/40 rounded flex items-center justify-center backdrop-blur-sm px-1 text-[10px] text-white font-bold">CC</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Play Button -->
+                            <div class="w-14 h-14 bg-[#ff0000] rounded-2xl flex items-center justify-center shadow-lg relative z-10 cursor-pointer hover:scale-105 transition-transform">
+                                <i data-lucide="play" class="w-6 h-6 text-white fill-white ml-1"></i>
+                            </div>
+                            <!-- Bottom Controls -->
+                            <div class="absolute bottom-3 left-3 right-3 flex items-center justify-between">
+                                <div class="bg-black/60 text-white text-[10px] font-bold px-2 py-0.5 rounded backdrop-blur-sm">1:47 / 15:03</div>
+                                <div class="bg-black/40 w-6 h-6 rounded flex items-center justify-center backdrop-blur-sm cursor-pointer"><i data-lucide="maximize" class="w-3.5 h-3.5 text-white"></i></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Lesson Assistant -->
+                    <div class="flex-1 flex flex-col border-t border-zinc-100 pt-5 mt-auto">
+                        <h3 class="text-[11px] font-bold text-zinc-400 uppercase tracking-widest mb-1">Lesson Assistant</h3>
+                        <p class="text-[10px] text-zinc-500 mb-4 leading-tight">Uses your teacher's prompt and these resources. Add a Featherless API key in extension options if needed.</p>
+                        
+                        <div class="flex-1 overflow-y-auto mb-4 text-[13px] custom-scroll pr-2">
+                            <div class="bg-[#111] text-white p-3 rounded-xl rounded-tr-sm mb-4 w-fit ml-auto shadow-sm border border-zinc-800">
+                                can u give me the answers
+                            </div>
+                            <div class="text-zinc-700 leading-relaxed mb-4 w-[90%]">
+                                I can't give you the answers directly—that's because the best way to learn is to figure them out yourself! But I can help you get really good at spotting numbers 1, 2, and 3.<br><br>Here are some ways I can help:
+                            </div>
+                        </div>
+
+                        <div class="mt-auto bg-white border border-zinc-200 rounded-xl p-1.5 flex gap-2 shadow-sm focus-within:border-zinc-400 transition-colors">
+                            <input type="text" placeholder="Ask about this lesson or a resource..." class="flex-1 bg-transparent border-none outline-none text-[13px] px-2 text-zinc-800 placeholder:text-zinc-400">
+                            <button class="bg-zinc-950 text-white px-4 py-2 rounded-lg text-[13px] font-semibold hover:bg-zinc-800 transition-colors">Send</button>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. TEACHER VIEW -->
+        <div id="teacher-view" class="view-panel hidden flex-1 flex flex-col h-full bg-[#fafafa]">
+          <!-- Top Nav -->
+          <div class="h-16 bg-white border-b border-zinc-100 flex items-center justify-between px-8 shrink-0">
+            <div class="flex items-center gap-2">
+              <div class="w-5 h-5 bg-zinc-950 flex items-center justify-center rounded-[4px]">
+                <div class="w-1.5 h-1.5 bg-white rounded-full"></div>
+              </div>
+              <span class="font-semibold text-[15px] tracking-tight text-zinc-900">ClassLoop</span>
+            </div>
+            <div class="flex items-center gap-4">
+              <div class="text-right">
+                <div class="text-[13px] font-semibold text-zinc-900">Sarah Jenkins</div>
+                <div class="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Teacher</div>
+              </div>
+              <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&q=80&w=100" class="w-8 h-8 rounded-full border border-zinc-200 object-cover" alt="Teacher">
+              <button class="text-[13px] font-medium text-zinc-500 hover:text-zinc-900 ml-2">Sign Out</button>
+            </div>
+          </div>
+
+          <!-- Teacher Content -->
+          <div class="flex-1 p-8 overflow-y-auto custom-scroll flex justify-center">
+            <div class="w-full max-w-[1100px]">
+              
+              <!-- Top Row: Welcome + Class Code -->
+              <div class="flex flex-col lg:flex-row gap-6 mb-8">
+                <!-- Welcome Banner -->
+                <div class="flex-1 bg-zinc-950 rounded-2xl p-8 flex flex-col justify-center text-white shadow-lg relative overflow-hidden">
+                  <!-- Decorative subtle background glow -->
+                  <div class="absolute -right-20 -top-20 w-64 h-64 bg-brand-500 rounded-full opacity-10 blur-3xl"></div>
+                  <h1 class="text-2xl font-semibold mb-2 tracking-tight relative z-10">Welcome back, Sarah</h1>
+                  <p class="text-zinc-400 text-[14px] relative z-10">You have 2 pending items to review today.</p>
+                </div>
+
+                <!-- Class Code -->
+                <div class="w-full lg:w-[300px] bg-white border border-zinc-200 rounded-2xl p-6 shadow-sm flex flex-col justify-center">
+                  <div class="flex items-center gap-1.5 text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-3">
+                    <i data-lucide="key" class="w-3.5 h-3.5"></i> Class Code
+                  </div>
+                  <div class="flex items-center justify-between mb-4">
+                    <div class="text-3xl font-bold tracking-[0.2em] text-zinc-900">9GDQ9P</div>
+                    <button class="p-2 text-zinc-400 hover:bg-zinc-50 rounded-md transition-colors border border-transparent hover:border-zinc-200"><i data-lucide="copy" class="w-4 h-4"></i></button>
+                  </div>
+                  <button class="w-full py-2 bg-red-50 text-red-600 text-[12px] font-semibold rounded-lg border border-red-100 flex items-center justify-center gap-1.5 hover:bg-red-100 transition-colors">
+                    <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Regenerate Code
+                  </button>
+                  <p class="text-[10px] text-zinc-400 text-center mt-3 font-medium">Share this securely with your students.</p>
+                </div>
+              </div>
+
+              <!-- Main Grid Layout -->
+              <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                
+                <!-- Left Content (Command Center) -->
+                <div class="lg:col-span-2 space-y-6">
+                  <div>
+                    <h3 class="text-[11px] font-bold text-zinc-400 uppercase tracking-[0.1em] mb-4 ml-1">Command Center</h3>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                      
+                      <div class="bg-white border border-zinc-200 rounded-2xl p-5 hover:border-zinc-300 hover:shadow-sm transition-all cursor-pointer group">
+                        <div class="w-10 h-10 rounded-xl bg-orange-50 text-orange-500 flex items-center justify-center mb-4 group-hover:scale-105 transition-transform">
+                          <i data-lucide="users" class="w-5 h-5"></i>
+                        </div>
+                        <div class="text-[14px] font-bold text-zinc-900">Class Roster</div>
+                      </div>
+
+                      <div class="bg-white border border-zinc-200 rounded-2xl p-5 hover:border-zinc-300 hover:shadow-sm transition-all cursor-pointer group">
+                        <div class="w-10 h-10 rounded-xl bg-green-50 text-green-600 flex items-center justify-center mb-4 group-hover:scale-105 transition-transform">
+                          <i data-lucide="mail" class="w-5 h-5"></i>
+                        </div>
+                        <div class="text-[14px] font-bold text-zinc-900">Email Contacts</div>
+                      </div>
+
+                      <div class="bg-white border border-zinc-200 rounded-2xl p-5 hover:border-zinc-300 hover:shadow-sm transition-all cursor-pointer group">
+                        <div class="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center mb-4 group-hover:scale-105 transition-transform">
+                          <i data-lucide="book-open" class="w-5 h-5"></i>
+                        </div>
+                        <div class="text-[14px] font-bold text-zinc-900">Manage Lessons</div>
+                      </div>
+
+                      <div class="bg-white border border-zinc-200 rounded-2xl p-5 hover:border-zinc-300 hover:shadow-sm transition-all cursor-pointer group">
+                        <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-500 flex items-center justify-center mb-4 group-hover:scale-105 transition-transform">
+                          <i data-lucide="sparkles" class="w-5 h-5"></i>
+                        </div>
+                        <div class="text-[14px] font-bold text-zinc-900">Create Lesson</div>
+                      </div>
+
+                      <div class="bg-white border border-zinc-200 rounded-2xl p-5 hover:border-zinc-300 hover:shadow-sm transition-all cursor-pointer group">
+                        <div class="w-10 h-10 rounded-xl bg-pink-50 text-pink-500 flex items-center justify-center mb-4 group-hover:scale-105 transition-transform">
+                          <i data-lucide="file-check-2" class="w-5 h-5"></i>
+                        </div>
+                        <div class="text-[14px] font-bold text-zinc-900">Create Rubric</div>
+                      </div>
+
+                    </div>
+                  </div>
+
+                  <!-- Network Banner -->
+                  <div class="bg-[#f5f6ff] border border-[#e4e6fb] rounded-2xl p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <div>
+                      <h4 class="text-[15px] font-bold text-[#1a1c29] mb-1">Join a School Network</h4>
+                      <p class="text-[13px] text-[#555870]">Collaborate with other teachers and sync assignment schedules.</p>
+                    </div>
+                    <button class="px-5 py-2.5 bg-[#5A51E1] text-white text-[13px] font-semibold rounded-lg hover:bg-[#4b43c6] transition-colors shadow-sm whitespace-nowrap">
+                      Get Started
                     </button>
                   </div>
                 </div>
 
-                <div class="p-6 bg-zinc-50 border border-zinc-200 rounded-xl">
-                  <div class="flex items-center gap-2 mb-4">
-                    <i data-lucide="repeat" class="w-4 h-4 text-zinc-400"></i>
-                    <h3 class="text-sm font-semibold">Cross-Curricular Mapping</h3>
-                  </div>
-                  <p class="text-[13px] text-zinc-600 leading-relaxed mb-6">
-                    English 8 is starting <em>Oliver Twist</em> next week. It aligns with your <strong>Industrial Revolution</strong> unit.
-                  </p>
-                  <button class="text-[12px] font-semibold text-zinc-950 flex items-center gap-1.5 hover:gap-2 transition-all">
-                    Ping Mr. Allen (English) to sync <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
-                  </button>
-                </div>
-              </div>
-
-              <div class="col-span-12 lg:col-span-4 space-y-6">
-                <h3 class="text-[13px] font-bold text-zinc-400 uppercase tracking-widest">Teacher-Assist</h3>
-                
-                <div class="p-4 bg-white app-border rounded-xl space-y-4">
-                  <div class="flex items-center gap-2">
-                    <i data-lucide="file-text" class="w-4 h-4 text-zinc-400"></i>
-                    <span class="text-[13px] font-semibold">Rubric Generator</span>
-                  </div>
-                  <textarea class="w-full p-3 bg-zinc-50 border border-zinc-100 rounded-lg text-[12px] focus:outline-none focus:ring-1 focus:ring-zinc-200 resize-none h-24" placeholder="Standard-aligned prompt..."></textarea>
-                  <button class="w-full py-2 border border-zinc-200 text-zinc-950 text-[12px] font-medium rounded-md hover:bg-zinc-50 transition-colors">Create Matrix</button>
-                </div>
-
-                <div class="p-4 bg-white app-border rounded-xl space-y-4">
-                  <div class="flex items-center gap-2">
-                    <i data-lucide="layers" class="w-4 h-4 text-zinc-400"></i>
-                    <span class="text-[13px] font-semibold">Differentiation</span>
-                  </div>
-                  <div class="flex gap-1">
-                    <span class="flex-1 py-1.5 bg-zinc-100 text-zinc-600 text-[10px] font-bold text-center rounded">Remedial</span>
-                    <span class="flex-1 py-1.5 bg-zinc-950 text-white text-[10px] font-bold text-center rounded">Standard</span>
-                    <span class="flex-1 py-1.5 bg-zinc-100 text-zinc-600 text-[10px] font-bold text-center rounded">Adv</span>
-                  </div>
-                  <button class="w-full py-2 bg-zinc-100 text-zinc-950 text-[12px] font-medium rounded-md hover:bg-zinc-200 transition-colors">Rewrite Passage</button>
-                </div>
-              </div>
-
-            </div>
-          </div>
-        </div>
-
-        <div id="student-view" class="view-panel hidden flex-1 flex flex-col md:flex-row h-full">
-          <div class="w-full md:w-56 sidebar-bg border-r border-zinc-100 p-5 flex flex-col">
-            <div class="mb-8">
-              <div class="text-[11px] font-bold text-zinc-400 uppercase tracking-widest mb-4">Workspace</div>
-              <nav class="space-y-1">
-                <a href="#" class="flex items-center gap-2.5 px-2 py-1.5 text-[13px] font-medium bg-white app-border rounded-md shadow-sm"><i data-lucide="map" class="w-4 h-4 text-zinc-400"></i> Growth Map</a>
-                <a href="#" class="flex items-center gap-2.5 px-2 py-1.5 text-[13px] font-medium text-zinc-500 hover:text-zinc-900"><i data-lucide="check-circle" class="w-4 h-4"></i> Redo List</a>
-                <a href="#" class="flex items-center gap-2.5 px-2 py-1.5 text-[13px] font-medium text-zinc-500 hover:text-zinc-900"><i data-lucide="search" class="w-4 h-4"></i> Research</a>
-              </nav>
-            </div>
-            
-            <div class="bg-white rounded-xl border border-gray-100 shadow-subtle p-5 mb-6">
-              <div class="flex items-center gap-2 mb-4">
-                <div class="bg-indigo-50 p-1.5 rounded-md border border-indigo-100"><i data-lucide="users" class="w-4 h-4 text-indigo-800"></i></div>
-                <h4 class="font-semibold text-gray-900 text-sm">Study Group Finder</h4>
-              </div>
-              <div class="bg-gray-50 rounded-lg p-3 border border-gray-100 mb-3">
-                <div class="flex justify-between items-start mb-1">
-                  <span class="text-xs font-bold text-gray-900">Physics Chapter 4</span>
-                  <span class="flex items-center gap-1 text-[10px] text-indigo-600 font-bold"><span class="w-1.5 h-1.5 bg-indigo-500 rounded-full"></span> 3 Online</span>
-                </div>
-                <p class="text-[10px] text-gray-500 mb-2 font-light">Discussing friction formulas.</p>
-                <button class="w-full bg-white border border-gray-200 text-gray-700 text-xs font-semibold py-1.5 rounded hover:bg-gray-50 flex items-center justify-center gap-1.5 transition-colors">
-                  <i data-lucide="layout" class="w-3 h-3"></i> Open Workspace
-                </button>
-              </div>
-              <button class="text-[10px] text-indigo-600 font-bold uppercase tracking-wider hover:underline w-full text-center">Find groups</button>
-            </div>
-
-            <div class="bg-white rounded-xl app-border shadow-subtle p-5">
-              <div class="flex items-center justify-between mb-4">
-                <div class="flex items-center gap-2">
-                  <div class="bg-zinc-100 p-1.5 rounded-md app-border"><i data-lucide="folder-kanban" class="w-4 h-4 text-zinc-700"></i></div>
-                  <h4 class="font-semibold text-zinc-900 text-sm">Research Notes</h4>
-                </div>
-                <button class="text-[10px] font-bold text-zinc-400 hover:text-zinc-900 transition-colors uppercase tracking-widest"><i data-lucide="maximize-2" class="w-3.5 h-3.5"></i></button>
-              </div>
-              
-              <div class="space-y-3 mb-4">
-                <div class="p-3 bg-zinc-50 rounded-lg app-border hover:border-zinc-300 transition-colors cursor-pointer group">
-                  <div class="flex justify-between items-start mb-1.5">
-                     <span class="text-[11px] font-bold text-zinc-900 flex items-center gap-1.5"><i data-lucide="link" class="w-3 h-3 text-accent"></i> PBS: Industrial Age</span>
-                     <span class="text-[9px] text-zinc-400 font-medium bg-white px-1.5 py-0.5 rounded border border-zinc-200 shadow-sm">Source A</span>
-                  </div>
-                  <p class="text-[10px] text-zinc-500 line-clamp-2 leading-relaxed">Includes primary accounts of factory workers and timelines of technological advancements.</p>
-                </div>
-
-                <div class="p-3 bg-zinc-50 rounded-lg app-border hover:border-zinc-300 transition-colors cursor-pointer group">
-                  <div class="flex justify-between items-start mb-1.5">
-                     <span class="text-[11px] font-bold text-zinc-900 flex items-center gap-1.5"><i data-lucide="file-text" class="w-3 h-3 text-blue-500"></i> Factory Act 1833</span>
-                     <span class="text-[9px] text-zinc-400 font-medium bg-white px-1.5 py-0.5 rounded border border-zinc-200 shadow-sm">PDF</span>
-                  </div>
-                  <p class="text-[10px] text-zinc-500 line-clamp-2 leading-relaxed">Annotated pages 4-6 for the upcoming essay.</p>
-                </div>
-              </div>
-
-              <button class="w-full border border-dashed border-zinc-200 text-zinc-500 text-[12px] font-medium py-2 rounded hover:bg-zinc-50 hover:text-zinc-900 transition-colors flex items-center justify-center gap-1.5">
-                <i data-lucide="plus" class="w-3.5 h-3.5"></i> New Source Note
-              </button>
-            </div>
-
-          </div>
-        </div>
-
-        <div id="guided-view" class="view-panel hidden flex-1 flex-col bg-white overflow-hidden">
-          
-          <div class="h-8 bg-red-50/80 border-b border-red-100 text-[10px] font-bold text-red-600 uppercase tracking-[0.1em] flex items-center justify-center shrink-0">
-            <i data-lucide="lock" class="w-3 h-3 mr-1.5"></i> Focus Lock Active: Lesson Pauses if Tab Changes
-          </div>
-
-          <div class="flex-1 flex overflow-hidden">
-            <div class="flex-[3] p-8 md:p-12 overflow-y-auto custom-scroll relative bg-white">
-              
-              <div class="max-w-2xl mx-auto pb-20">
-                <div class="flex items-center gap-2 mb-6">
-                  <span class="px-2 py-1 bg-zinc-100 text-zinc-600 rounded text-[10px] font-bold uppercase tracking-wider">Unit 4</span>
-                  <h2 class="text-2xl font-bold text-zinc-950 tracking-tight">The Industrial Revolution</h2>
-                </div>
-
-                <div class="w-full aspect-video bg-zinc-950 rounded-xl mb-8 relative overflow-hidden group border border-zinc-200 shadow-sm cursor-pointer">
-                  <img src="https://images.unsplash.com/photo-1534398079244-67c8ad691c1b?auto=format&fit=crop&q=80&w=800" class="absolute inset-0 w-full h-full object-cover opacity-70 group-hover:scale-105 group-hover:opacity-50 transition-all duration-700">
-                  <div class="absolute inset-0 flex items-center justify-center">
-                    <div class="w-14 h-14 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center border border-white/30 group-hover:bg-white/30 transition-colors shadow-lg animate-in delay-1">
-                      <i data-lucide="play" class="w-6 h-6 text-white fill-white ml-1"></i>
+                <!-- Right Content (Sidebar) -->
+                <div class="lg:col-span-1 space-y-8">
+                  
+                  <!-- Recent Chats -->
+                  <section>
+                    <h3 class="text-[11px] font-bold text-zinc-400 uppercase tracking-[0.1em] mb-3 ml-1">Recent Chats</h3>
+                    <div class="bg-white border border-zinc-200 rounded-xl p-8 text-center shadow-sm">
+                      <p class="text-[13px] text-zinc-400 font-medium">No messages yet.</p>
                     </div>
-                  </div>
-                  <div class="absolute bottom-4 left-4 flex items-center gap-2">
-                    <span class="bg-black/60 backdrop-blur text-white text-[11px] font-semibold px-2.5 py-1 rounded">03:45</span>
-                    <span class="bg-accent/90 backdrop-blur text-white text-[11px] font-semibold px-2.5 py-1 rounded flex items-center gap-1.5"><i data-lucide="eye" class="w-3.5 h-3.5"></i> Teacher Assigned</span>
-                  </div>
-                </div>
+                  </section>
 
-                <p class="text-[15px] text-zinc-600 leading-relaxed mb-6 font-light">
-                  The transition from creating goods by hand to using machines was a pivotal moment in history. It altered not only the economy but also the social fabric of the time. Before this era, most people resided in small, rural communities where their daily existences revolved around farming.
-                </p>
-
-                <div class="relative bg-zinc-50 border-l-2 border-accent p-5 rounded-r-xl mb-12">
-                  <div class="absolute -right-3 -top-3 w-7 h-7 bg-accent rounded-full flex items-center justify-center shadow-md animate-bounce">
-                    <i data-lucide="mouse-pointer-2" class="w-3.5 h-3.5 text-white"></i>
-                  </div>
-                  <div class="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-2 flex items-center gap-1.5">
-                    <i data-lucide="video" class="w-3 h-3"></i> Teacher Spotlight
-                  </div>
-                  <p class="text-[14px] text-zinc-900 font-medium leading-relaxed">
-                    Factories centralized production, meaning workers had to leave their homes to work in massive, highly structured environments for the very first time.
-                  </p>
-                </div>
-
-                <div class="relative border border-zinc-200 bg-white rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.06)] p-6 z-10 animate-in delay-2">
-                  <div class="absolute -top-3 left-1/2 -translate-x-1/2 bg-zinc-950 text-white text-[10px] font-bold uppercase tracking-widest px-3 py-1 rounded-full flex items-center gap-1.5 shadow-sm">
-                    <i data-lucide="hand" class="w-3 h-3"></i> Checkpoint
-                  </div>
-                  <h3 class="text-[15px] font-bold text-zinc-950 mt-3 mb-5 text-center leading-snug">Based on the text and video, where did most people work before the rise of factories?</h3>
-                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-5">
-                    <button class="p-3 border border-zinc-200 rounded-lg text-[13px] font-medium text-zinc-600 hover:bg-zinc-50 hover:border-zinc-300 hover:text-zinc-900 transition-all text-left">In large cities</button>
-                    <button class="p-3 border border-zinc-200 rounded-lg text-[13px] font-medium text-zinc-600 hover:bg-zinc-50 hover:border-zinc-300 hover:text-zinc-900 transition-all text-left">On farms / at home</button>
-                  </div>
-                  <div class="flex items-center justify-between pt-4 border-t border-zinc-100">
-                     <button class="text-[12px] font-semibold text-accent flex items-center gap-1.5 hover:underline"><i data-lucide="play-circle" class="w-4 h-4"></i> Teacher Audio Hint</button>
-                     <button class="px-5 py-2 bg-zinc-100 text-zinc-400 text-[12px] font-bold rounded-md cursor-not-allowed">Continue Scroll</button>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="w-64 sidebar-bg border-l border-zinc-100 flex flex-col hidden md:flex">
-              <div class="p-5 border-b border-zinc-100">
-                <div class="flex items-center justify-between mb-4">
-                  <div class="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">Unified Resources</div>
-                  <span class="text-[9px] font-bold bg-zinc-200/50 text-zinc-500 px-1.5 py-0.5 rounded">Active</span>
-                </div>
-                
-                <div class="space-y-3">
-                  <div class="p-[2px] bg-gradient-to-b from-zinc-200 to-zinc-50 rounded-xl">
-                    <div class="bg-white rounded-[10px] p-3 shadow-sm cursor-pointer hover:shadow-md transition-all group relative overflow-hidden">
-                      <div class="absolute top-0 left-0 w-1 h-full bg-accent"></div>
-                      <div class="flex items-start justify-between mb-1 pl-2">
-                        <div class="flex items-center gap-2">
-                          <div class="bg-blue-50 p-1.5 rounded text-blue-600"><i data-lucide="file-edit" class="w-3.5 h-3.5"></i></div>
-                          <div>
-                            <div class="text-[12px] font-bold text-zinc-900 leading-none">Guided Notes</div>
-                            <div class="text-[9px] text-zinc-400 font-medium mt-1">Split-pane view</div>
-                          </div>
+                  <!-- Inbox Stream -->
+                  <section>
+                    <div class="flex items-center justify-between mb-3 px-1">
+                      <h3 class="text-[11px] font-bold text-zinc-400 uppercase tracking-[0.1em]">Inbox Stream</h3>
+                      <button class="text-[10px] font-bold text-accent uppercase hover:underline">View All</button>
+                    </div>
+                    
+                    <div class="bg-white border border-zinc-200 rounded-xl shadow-sm divide-y divide-zinc-100">
+                      
+                      <div class="p-4 hover:bg-zinc-50 cursor-pointer transition-colors">
+                        <div class="flex justify-between items-start mb-1">
+                          <span class="text-[13px] font-bold text-zinc-900">p.miller@gmail.com</span>
+                          <span class="text-[10px] text-zinc-400 font-medium mt-0.5">3/28/2026</span>
                         </div>
-                        <div class="bg-zinc-100 p-1 rounded text-zinc-500 group-hover:bg-zinc-200 transition-colors">
-                          <i data-lucide="panel-right-open" class="w-3.5 h-3.5"></i>
+                        <p class="text-[12px] text-zinc-500 truncate">Re: Extension request on assignment</p>
+                      </div>
+
+                      <div class="p-4 hover:bg-zinc-50 cursor-pointer transition-colors">
+                        <div class="flex justify-between items-start mb-1">
+                          <span class="text-[13px] font-bold text-zinc-900">j.smith@school.edu</span>
+                          <span class="text-[10px] text-zinc-400 font-medium mt-0.5">3/28/2026</span>
                         </div>
+                        <p class="text-[12px] text-zinc-500 truncate">Re: Clarification on rubric</p>
                       </div>
-                    </div>
-                  </div>
 
-                  <div class="flex items-center justify-between p-2.5 bg-white app-border rounded-lg shadow-sm cursor-pointer hover:border-zinc-300 transition-all group">
-                    <div class="flex items-center gap-2.5">
-                      <div class="bg-orange-50 p-1.5 rounded text-orange-600"><i data-lucide="globe" class="w-3.5 h-3.5"></i></div>
-                      <div>
-                        <div class="text-[12px] font-semibold text-zinc-800">PBS Archive</div>
-                        <div class="text-[10px] text-zinc-400">Reference Link</div>
+                      <div class="p-4 hover:bg-zinc-50 cursor-pointer transition-colors">
+                        <div class="flex justify-between items-start mb-1">
+                          <span class="text-[13px] font-bold text-zinc-900">office.admin@district.org</span>
+                          <span class="text-[10px] text-zinc-400 font-medium mt-0.5">3/28/2026</span>
+                        </div>
+                        <p class="text-[12px] text-zinc-500 truncate">Upcoming faculty meeting agenda</p>
                       </div>
-                    </div>
-                    <i data-lucide="external-link" class="w-3 h-3 text-zinc-300 group-hover:text-zinc-600"></i>
-                  </div>
-                </div>
-              </div>
 
-              <div class="p-5">
-                <div class="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-4 flex items-center justify-between">
-                  Teacher Assistants <span class="w-2 h-2 bg-emerald-500 rounded-full"></span>
+                      <div class="p-4 hover:bg-zinc-50 cursor-pointer transition-colors">
+                        <div class="flex justify-between items-start mb-1">
+                          <span class="text-[13px] font-bold text-zinc-900">Sarah</span>
+                          <span class="text-[10px] text-zinc-400 font-medium mt-0.5">3/27/2026</span>
+                        </div>
+                        <p class="text-[12px] text-zinc-500 truncate">Notes from period 3</p>
+                      </div>
+
+                      <div class="p-4 hover:bg-zinc-50 cursor-pointer transition-colors">
+                        <div class="flex justify-between items-start mb-1">
+                          <span class="text-[13px] font-bold text-zinc-900">EdTech Services Inc</span>
+                          <span class="text-[10px] text-zinc-400 font-medium mt-0.5">3/27/2026</span>
+                        </div>
+                        <p class="text-[12px] text-zinc-500 truncate">E-mail address verification initiated</p>
+                      </div>
+
+                    </div>
+                  </section>
                 </div>
-                <div class="grid grid-cols-2 gap-2">
-                  <button class="p-3 bg-white app-border rounded-xl flex flex-col items-center gap-2 hover:bg-zinc-50 transition-all shadow-sm">
-                    <div class="bg-indigo-50 text-indigo-600 p-2 rounded-lg"><i data-lucide="book-open" class="w-4 h-4"></i></div>
-                    <span class="text-[11px] font-semibold text-zinc-700">Vocab</span>
-                  </button>
-                  <button class="p-3 bg-white app-border rounded-xl flex flex-col items-center gap-2 hover:bg-zinc-50 transition-all shadow-sm">
-                    <div class="bg-emerald-50 text-emerald-600 p-2 rounded-lg"><i data-lucide="lightbulb" class="w-4 h-4"></i></div>
-                    <span class="text-[11px] font-semibold text-zinc-700">Hints</span>
-                  </button>
-                </div>
+
               </div>
             </div>
           </div>
@@ -406,14 +835,9 @@
     </div>
   </section>
 
-  <footer class="py-12 border-t border-zinc-100">
-    <div class="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center text-[12px] text-zinc-400">
-      <div>&copy; 2024 ClassLoop Systems. Built for the future of EdTech.</div>
-      <div class="flex gap-6 mt-4 md:mt-0 font-medium">
-        <a href="#" class="hover:text-zinc-900 transition-colors">Privacy</a>
-        <a href="#" class="hover:text-zinc-900 transition-colors">Terms</a>
-        <a href="#" class="hover:text-zinc-900 transition-colors">Contact</a>
-      </div>
+  <footer class="py-12 border-t border-zinc-100 bg-white">
+    <div class="max-w-7xl mx-auto px-6 flex justify-center items-center text-[13px] text-zinc-500 font-medium text-center">
+      &copy; 2026 ClassLoop Systems. Built for the future of EdTech.
     </div>
   </footer>
 
@@ -430,18 +854,22 @@
 
           const targetId = tab.getAttribute('data-target');
 
+          // Reset tabs
           tabs.forEach(t => {
             t.classList.remove('active', 'tab-active');
             t.classList.add('text-zinc-500');
           });
 
+          // Activate clicked tab
           tab.classList.add('active', 'tab-active');
           tab.classList.remove('text-zinc-500');
 
+          // Hide all views
           views.forEach(v => {
             v.classList.add('hidden');
           });
 
+          // Show target view
           const activeView = document.getElementById(targetId);
           if (activeView) {
             activeView.classList.remove('hidden');
